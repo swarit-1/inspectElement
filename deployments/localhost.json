@@ -1,0 +1,30 @@
+{
+  "chainId": 31337,
+  "network": "localhost",
+  "addresses": {
+    "MockUSDC": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "IntentRegistry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "StakeVault": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "AgentRegistry": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "GuardedExecutor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ChallengeArbiter": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+  },
+  "contracts": {
+    "IntentRegistry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "AgentRegistry": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "GuardedExecutor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ChallengeArbiter": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "StakeVault": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "USDC": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  },
+  "traceAckSigner": "0x1249AA692585FE2F7148aed033690E0f4a24B9f3",
+  "reviewerSigner": "0x1249AA692585FE2F7148aed033690E0f4a24B9f3",
+  "constants": {
+    "chainId": 31337,
+    "maxSpendPerTx": "10000000",
+    "maxSpendPerDay": "50000000",
+    "agentStake": "50000000",
+    "challengeBond": "1000000",
+    "challengeWindowSec": 259200
+  }
+}

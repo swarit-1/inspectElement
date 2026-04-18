@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
     "outDir": "dist",
@@ -25,7 +25,7 @@
     "services/demo-control/**/*.ts",
     "services/mock-x402/**/*.ts",
 
-    "hardhat.config.ts",
+    "hardhat.config.cts",
     "ignition/**/*.ts",
     "test/**/*.ts"
   ],

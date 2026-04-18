@@ -43,6 +43,7 @@ export function loadDeploymentConfig(
 
   const path =
     configPath ??
+    process.env.DEPLOYMENTS_PATH ??
     resolve(process.cwd(), "deployments", "base-sepolia.json");
 
   try {

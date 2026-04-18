@@ -7,17 +7,22 @@
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { keccak256, encodePacked, type Hex } from "viem";
+import { keccak256, encodePacked, getAddress, type Hex } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
+import { baseSepolia, hardhat } from "viem/chains";
 import type { DecisionTrace } from "../packages/trace/src/types.js";
 import {
-  computeContextDigest,
   uploadTrace,
   toTraceAck,
   loadDeploymentConfig,
   createGuardClient,
   GuardDecision,
 } from "../packages/trace/src/index.js";
+
+function pickChain() {
+  const id = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined;
+  return id === 31337 ? hardhat : baseSepolia;
+}
 
 export interface AgentEnv {
   readonly operatorKey: Hex;
@@ -89,13 +94,18 @@ export async function runExecuteFlow(
   const { trace, expectedTarget, expectedAmount } = loadFixture(scenario);
 
   // Override trace fields with live values
+  const normalizedTarget = getAddress(expectedTarget.toLowerCase());
+  const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
+  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
+
   const liveTrace: DecisionTrace = {
     ...trace,
+    owner: normalizedOwner,
     agentId: env.agentId,
     proposedAction: {
       ...trace.proposedAction,
-      target: expectedTarget,
-      token: config.contracts.USDC,
+      target: normalizedTarget,
+      token: normalizedToken,
       amount: expectedAmount,
     },
   };
@@ -106,13 +116,13 @@ export async function runExecuteFlow(
   console.log(`[${scenario}] Digest:   ${traceResponse.contextDigest}`);
 
   const traceAck = toTraceAck(traceResponse);
-  const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl });
+  const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl, chain: pickChain() });
 
   const executionRequest = {
-    owner: liveTrace.owner as Hex,
+    owner: normalizedOwner,
     agentId: env.agentId,
-    target: expectedTarget,
-    token: config.contracts.USDC,
+    target: normalizedTarget,
+    token: normalizedToken,
     amount: BigInt(expectedAmount),
     data: "0x" as Hex,
     traceURI: traceResponse.traceURI,
@@ -155,13 +165,18 @@ export async function runPreflightOnlyFlow(
   const config = loadDeploymentConfig();
   const { trace, expectedTarget, expectedAmount } = loadFixture("blocked");
 
+  const normalizedTarget = getAddress(expectedTarget.toLowerCase());
+  const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
+  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
+
   const liveTrace: DecisionTrace = {
     ...trace,
+    owner: normalizedOwner,
     agentId: env.agentId,
     proposedAction: {
       ...trace.proposedAction,
-      target: expectedTarget,
-      token: config.contracts.USDC,
+      target: normalizedTarget,
+      token: normalizedToken,
       amount: expectedAmount,
     },
   };
@@ -171,13 +186,13 @@ export async function runPreflightOnlyFlow(
   console.log(`[blocked] TraceURI: ${traceResponse.traceURI}`);
 
   const traceAck = toTraceAck(traceResponse);
-  const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl });
+  const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl, chain: pickChain() });
 
   const executionRequest = {
-    owner: liveTrace.owner as Hex,
+    owner: normalizedOwner,
     agentId: env.agentId,
-    target: expectedTarget,
-    token: config.contracts.USDC,
+    target: normalizedTarget,
+    token: normalizedToken,
     amount: BigInt(expectedAmount),
     data: "0x" as Hex,
     traceURI: traceResponse.traceURI,

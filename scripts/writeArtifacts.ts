@@ -11,7 +11,10 @@
  */
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
 const CONTRACTS = [
     "IntentRegistry",
@@ -46,10 +49,41 @@ function main() {
         addresses[local] = addr;
     }
 
-    // Write consolidated deployments/<network>.json.
+    // Build the schema infra + packages/trace expect.
+    const contracts = {
+        IntentRegistry: addresses.IntentRegistry,
+        AgentRegistry: addresses.AgentRegistry,
+        GuardedExecutor: addresses.GuardedExecutor,
+        ChallengeArbiter: addresses.ChallengeArbiter,
+        StakeVault: addresses.StakeVault,
+        USDC: addresses.USDC ?? addresses.MockUSDC,
+    };
+
+    const traceAckSigner =
+        process.env.TRACE_ACK_SIGNER_ADDRESS ??
+        "0x0000000000000000000000000000000000000000";
+    const reviewerSigner =
+        process.env.REVIEWER_SIGNER_ADDRESS ?? traceAckSigner;
+
+    const out = {
+        chainId,
+        network: networkName,
+        addresses, // keep for anyone reading the legacy shape
+        contracts,
+        traceAckSigner,
+        reviewerSigner,
+        constants: {
+            chainId,
+            maxSpendPerTx: "10000000",
+            maxSpendPerDay: "50000000",
+            agentStake: "50000000",
+            challengeBond: "1000000",
+            challengeWindowSec: 259200,
+        },
+    };
+
     const deploymentsDir = path.join(ROOT, "deployments");
     fs.mkdirSync(deploymentsDir, { recursive: true });
-    const out = { chainId, network: networkName, addresses };
     fs.writeFileSync(
         path.join(deploymentsDir, `${networkName}.json`),
         JSON.stringify(out, null, 2) + "\n",
