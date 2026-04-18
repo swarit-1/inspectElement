@@ -9,7 +9,7 @@ import { baseSepolia } from "viem/chains";
 import { z } from "zod";
 import { challengeArbiterFunctions } from "../abi/index.js";
 import { loadDeployments, loadEnv } from "../config/env.js";
-import { Signer } from "../signer/index.js";
+import { resolveReviewerContext, Signer } from "../signer/index.js";
 import { logger } from "../utils/logger.js";
 import { asyncHandler, badRequest, internal } from "./errors.js";
 
@@ -51,10 +51,13 @@ export function createReviewerRouter(): Router {
         throw internal("reviewer key not configured (set REVIEWER_PRIVATE_KEY)");
       }
 
+      const reviewerCtx = resolveReviewerContext();
       const sig = await signer.signReviewerDecision({
         challengeId,
         uphold: parsed.data.uphold,
         slashAmount,
+        challengeArbiter: reviewerCtx.challengeArbiter,
+        chainId: reviewerCtx.chainId,
       });
 
       const calldata = encodeFunctionData({
