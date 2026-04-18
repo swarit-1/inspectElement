@@ -23,6 +23,7 @@
     "bootstrap": "tsx scripts/bootstrap-agent.ts",
     "reset": "tsx scripts/reset.ts",
     "demo": "tsx services/demo-control/src/index.ts",
+    "trace-stub": "tsx packages/trace/src/trace-stub-server.ts",
     "mock-x402": "tsx services/mock-x402/src/index.ts",
     "agent:legit": "tsx agents/legit.ts",
     "agent:blocked": "tsx agents/blocked.ts",

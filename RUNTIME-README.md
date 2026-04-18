@@ -1,5 +1,7 @@
 # IntentGuard Agent Runtime (Dev 2)
 
+**Canonical spec:** [`specs/specs-dev2.md`](specs/specs-dev2.md) — scope, interfaces (IF-03/04/05/10), milestones, and shared artifacts for this workstream.
+
 ## Overview
 
 The runtime layer between the LLM loop and the wallet. Handles:

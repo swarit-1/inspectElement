@@ -7,10 +7,10 @@
 
 import express from "express";
 import {
+  encodeAbiParameters,
   keccak256,
-  toHex,
+  stringToBytes,
   type Hex,
-  encodePacked,
   type PrivateKeyAccount,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -21,7 +21,8 @@ interface TraceRequest {
   agentId: string;
   owner: string;
   contextDigest: Hex;
-  trace: string;
+  /** Canonical JSON string or parsed object (IF-04). */
+  trace: string | Record<string, unknown>;
 }
 
 /**
@@ -53,27 +54,33 @@ export function createTraceStubServer(signerPrivateKey: Hex) {
 
       // Generate a deterministic trace URI from the digest
       const traceURI = `ipfs://stub/${body.contextDigest}`;
-      const uriHash = keccak256(
-        new TextEncoder().encode(traceURI) as unknown as Uint8Array
-      );
+      const uriHash = keccak256(stringToBytes(traceURI));
       const expiresAt = Math.floor(Date.now() / 1000) + TRACE_ACK_VALIDITY_SECONDS;
 
-      // Sign the TraceAck fields: contextDigest, uriHash, expiresAt
-      // This matches the on-chain verification in GuardedExecutor
-      const messageHash = keccak256(
-        encodePacked(
-          ["bytes32", "bytes32", "uint64"],
-          [body.contextDigest, uriHash, BigInt(expiresAt)]
-        )
+      // Must match services/infra Signer.traceAckDigest + EIP-191 personal_sign
+      // (keccak256(abi.encode(bytes32,bytes32,uint64)), not encodePacked).
+      const digest = keccak256(
+        encodeAbiParameters(
+          [
+            { name: "contextDigest", type: "bytes32" },
+            { name: "uriHash", type: "bytes32" },
+            { name: "expiresAt", type: "uint64" },
+          ],
+          [body.contextDigest, uriHash, BigInt(expiresAt)],
+        ),
       );
 
       const signature = await signer.signMessage({
-        message: { raw: messageHash as Hex },
+        message: { raw: digest },
       });
 
-      // Store the trace
+      const traceStored =
+        typeof body.trace === "string"
+          ? body.trace
+          : JSON.stringify(body.trace);
+
       traces.set(body.contextDigest, {
-        trace: body.trace,
+        trace: traceStored,
         contextDigest: body.contextDigest,
         timestamp: Date.now(),
       });

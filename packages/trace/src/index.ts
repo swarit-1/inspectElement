@@ -3,6 +3,8 @@
  *
  * This is the single most important artifact owned by Dev 2.
  * Dev 3 imports it for trace storage; Dev 1's guard verifies the digest.
+ *
+ * @see `specs/specs-dev2.md` — frozen schema rules and deliverables.
  */
 
 export type {
