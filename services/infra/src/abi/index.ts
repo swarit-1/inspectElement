@@ -93,7 +93,10 @@ export const intentRegistryEvents = [
   {
     type: "event",
     name: "IntentRevoked",
-    inputs: [{ name: "owner", type: "address", indexed: true }],
+    inputs: [
+      { name: "owner", type: "address", indexed: true },
+      { name: "intentHash", type: "bytes32", indexed: true },
+    ],
   },
 ] as const satisfies Abi;
 

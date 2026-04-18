@@ -20,7 +20,27 @@ npm install
 npm run compile
 npm run test
 npm run deploy:base-sepolia   # requires .env: BASE_SEPOLIA_RPC_URL, DEPLOYER_PRIVATE_KEY, BASESCAN_API_KEY
+                              # ALSO requires services/infra/.env.local with TRACE_ACK_PRIVATE_KEY
+                              # (optionally REVIEWER_PRIVATE_KEY) — generate with
+                              #   `npm --prefix services/infra run keygen`
 ```
+
+The `deploy:base-sepolia` script chains three steps:
+
+1. `npm run deploy:params:base-sepolia` — derives `traceAckSigner` and
+   `reviewerSigner` from the private keys in `services/infra/.env.local`
+   (or env) and writes them to `ignition/parameters/base-sepolia.json`.
+2. `hardhat ignition deploy ... --parameters ignition/parameters/base-sepolia.json` —
+   deploys the contracts with the signer addresses **passed into the
+   `GuardedExecutor` and `ChallengeArbiter` constructors**, so no follow-up
+   `setTraceAckSigner` / `setReviewerSigner` admin tx is required.
+3. `npm run deploy:write-manifest:base-sepolia` — reads Ignition's
+   `deployed_addresses.json` plus the parameters file and writes
+   `deployments/base-sepolia.json` in the shape Dev 3's indexer and Dev 4's
+   web app load.
+
+Re-running the script without rotating signer keys is idempotent — Ignition
+short-circuits the deploy and only the manifest is rewritten.
 
 ## 2. Contract layout
 
@@ -240,19 +260,54 @@ receiptId = keccak256(abi.encode(
 - `GuardedExecutor` and `ChallengeArbiter` inherit OpenZeppelin `Ownable2Step`.
 - Deployer is the initial owner.
 - Only admin functions exposed:
-  - `GuardedExecutor.setTraceAckSigner(address)` — rotate Dev 3 infra signer.
-  - `ChallengeArbiter.setReviewerSigner(address)` — rotate post-hackathon reviewer.
+  - `GuardedExecutor.setTraceAckSigner(address)` — rotate Dev 3 infra signer
+    **after** deploy. The initial signer is set in the constructor (read from
+    `ignition/parameters/<network>.json`); this admin function exists only
+    for key rotation, **not** for initial registration.
+  - `ChallengeArbiter.setReviewerSigner(address)` — rotate post-hackathon
+    reviewer. Same pattern: initial value comes from the parameters file.
 - No pausing, no upgradeability, no timelock. Hackathon scope.
 - Ownership rotation is two-step (OZ `Ownable2Step`): proposal + acceptance.
 
 `StakeVault`, `IntentRegistry`, and `AgentRegistry` have no admin functions. Their wired addresses (USDC, Registry, Arbiter) are set at deploy via the constructor and are immutable.
 
-## 11. Deployment artifacts (produced in pass 2)
+## 11. Deployment artifacts (produced by `npm run deploy:base-sepolia`)
 
-- `deployments/base-sepolia.json` — contract addresses + constants.
-- `abi/IntentRegistry.json`, `abi/AgentRegistry.json`, `abi/GuardedExecutor.json`, `abi/ChallengeArbiter.json`, `abi/StakeVault.json` — built by `hardhat compile`.
+- `deployments/base-sepolia.json` — consolidated manifest. Shape:
 
-Both committed to the repo root. Devs 2, 3, 4 import directly.
+  ```jsonc
+  {
+    "chainId": 84532,
+    "network": "base-sepolia",
+    "contracts": {
+      "IntentRegistry":   "0x…",
+      "AgentRegistry":    "0x…",
+      "GuardedExecutor":  "0x…",
+      "ChallengeArbiter": "0x…",
+      "StakeVault":       "0x…",
+      "USDC":             "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+    },
+    "traceAckSigner":  "0x…", // mirror of the value passed to GuardedExecutor's constructor
+    "reviewerSigner":  "0x…", // mirror of the value passed to ChallengeArbiter's constructor
+    "startBlock":      <number | null>, // best-effort earliest block from Ignition's journal
+    "constants":       { /* see §3 */ }
+  }
+  ```
+
+  Dev 3's `services/infra/src/config/env.ts#loadDeployments` and Dev 4's
+  `apps/web/src/lib/deployments.ts` both read this file directly. The shape is
+  enforced by `services/infra/test/traceack-eip712.test.ts` and
+  `services/infra/test/read-model.test.ts`.
+
+- `ignition/parameters/<network>.json` — the input file consumed by
+  `hardhat ignition deploy`. Generated from `services/infra/.env.local` so
+  signer public keys never live in two places.
+
+- `abi/IntentRegistry.json`, `abi/AgentRegistry.json`, `abi/GuardedExecutor.json`,
+  `abi/ChallengeArbiter.json`, `abi/StakeVault.json` — built by `hardhat
+  compile` and copied by `scripts/writeArtifacts.ts`.
+
+All three are committed to the repo root. Devs 2, 3, 4 import directly.
 
 ## 12. DO NOT
 

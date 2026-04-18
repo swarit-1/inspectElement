@@ -23,9 +23,23 @@ async function main(): Promise<void> {
       host: env.HOST,
       chainId: env.CHAIN_ID,
       traceAckSigner: signer.traceAck.address,
+      publicBaseUrl: env.PUBLIC_BASE_URL,
     },
     "Starting IntentGuard infra service",
   );
+
+  // Loud demo-readiness check: every traceURI we hand to Dev 1's contract is
+  // namespaced under PUBLIC_BASE_URL. If we ship to a remote demo with the
+  // localhost default, the on-chain challenge replay path silently breaks.
+  if (
+    /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)/i.test(env.PUBLIC_BASE_URL) &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    logger.warn(
+      { publicBaseUrl: env.PUBLIC_BASE_URL },
+      "PUBLIC_BASE_URL points at localhost — set it to the public URL of this server before the demo, or off-chain consumers will fail to fetch traceURIs",
+    );
+  }
 
   const app = createApp();
   const server = app.listen(env.PORT, env.HOST, () => {

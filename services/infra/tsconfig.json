@@ -22,6 +22,11 @@
     "sourceMap": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*", "scripts/**/*", "test/**/*", "../../schemas/**/*"],
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "test/**/*",
+    "../../schemas/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }
