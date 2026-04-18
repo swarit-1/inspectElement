@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  /* ── Surface palette (deep navy base) ── */
+  --bg-root: oklch(0.13 0.012 260);
+  --bg-surface: oklch(0.17 0.01 260);
+  --bg-surface-raised: oklch(0.21 0.008 260);
+  --bg-surface-overlay: oklch(0.25 0.007 260);
+
+  /* ── Text ── */
+  --text-primary: oklch(0.93 0.008 260);
+  --text-secondary: oklch(0.68 0.01 260);
+  --text-tertiary: oklch(0.48 0.01 260);
+
+  /* ── Brand accent (warm gold) ── */
+  --accent: oklch(0.78 0.14 75);
+  --accent-dim: oklch(0.58 0.1 75);
+  --accent-subtle: oklch(0.25 0.04 75);
+
+  /* ── Status: success ── */
+  --status-success: oklch(0.72 0.17 155);
+  --status-success-dim: oklch(0.35 0.06 155);
+
+  /* ── Status: danger ── */
+  --status-danger: oklch(0.65 0.2 25);
+  --status-danger-dim: oklch(0.3 0.06 25);
+
+  /* ── Status: warning ── */
+  --status-warning: oklch(0.78 0.15 85);
+  --status-warning-dim: oklch(0.3 0.05 85);
+
+  /* ── Status: info ── */
+  --status-info: oklch(0.65 0.12 250);
+  --status-info-dim: oklch(0.28 0.04 250);
+
+  /* ── Borders ── */
+  --border-default: oklch(0.28 0.008 260);
+  --border-subtle: oklch(0.22 0.006 260);
+
+  /* ── Spacing scale (4pt base) ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-base: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+
+  /* ── Radius ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ── Motion ── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 250ms;
+}
+
+@theme inline {
+  --color-bg-root: var(--bg-root);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-raised: var(--bg-surface-raised);
+  --color-bg-overlay: var(--bg-surface-overlay);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-success: var(--status-success);
+  --color-success-dim: var(--status-success-dim);
+  --color-danger: var(--status-danger);
+  --color-danger-dim: var(--status-danger-dim);
+  --color-warning: var(--status-warning);
+  --color-warning-dim: var(--status-warning-dim);
+  --color-info: var(--status-info);
+  --color-info-dim: var(--status-info-dim);
+  --color-border: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+  --font-display: var(--font-bricolage);
+  --font-body: var(--font-redhat);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-root);
+  color: var(--text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Selection ── */
+::selection {
+  background: oklch(0.78 0.14 75 / 0.3);
+}
