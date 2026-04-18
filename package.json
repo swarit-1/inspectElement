@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "dev": "npm --workspace web run dev",
-    "build": "npm --workspace web run build",
+    "build": "npm run build:runtime && npm run build:web",
+    "build:runtime": "tsc -p tsconfig.json",
+    "build:web": "npm --workspace web run build",
     "start": "npm --workspace web run start",
     "lint": "npm --workspace web run lint",
     "test": "vitest run",

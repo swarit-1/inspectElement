@@ -96,9 +96,6 @@ export async function runExecuteFlow(
   const liveTrace: DecisionTrace = {
     ...trace,
     agentId: env.agentId,
-    owner: config.contracts.GuardedExecutor !== "0x0000000000000000000000000000000000000000"
-      ? trace.owner
-      : trace.owner,
     proposedAction: {
       ...trace.proposedAction,
       target: expectedTarget,
