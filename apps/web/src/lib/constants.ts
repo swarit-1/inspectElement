@@ -1,4 +1,5 @@
 import type { Address } from "viem";
+import { getDeploymentAddresses } from "./deployments";
 
 // ── Chain ──
 export const CHAIN_ID = 84532; // Base Sepolia
@@ -10,15 +11,11 @@ export const DEMO_AGENT_STAKE = 50_000_000n; // 50 USDC
 export const DEMO_CHALLENGE_BOND = 1_000_000n; // 1 USDC
 export const DEMO_EXPIRY_DAYS = 7;
 
-// ── Placeholder addresses (replaced by deployments/base-sepolia.json) ──
-export const PLACEHOLDER_ADDRESSES = {
-  usdc: "0x0000000000000000000000000000000000000001" as Address,
-  intentRegistry: "0x0000000000000000000000000000000000000002" as Address,
-  guardedExecutor: "0x0000000000000000000000000000000000000003" as Address,
-  agentRegistry: "0x0000000000000000000000000000000000000004" as Address,
-  challengeArbiter: "0x0000000000000000000000000000000000000005" as Address,
-  stakeVault: "0x0000000000000000000000000000000000000006" as Address,
-};
+/** On-chain contract addresses (from `deployments/base-sepolia.json` + optional NEXT_PUBLIC_* overrides). */
+export const CONTRACT_ADDRESSES = getDeploymentAddresses();
+
+/** @deprecated alias — use CONTRACT_ADDRESSES */
+export const PLACEHOLDER_ADDRESSES = CONTRACT_ADDRESSES;
 
 // ── Default counterparties for demo ──
 export const DEFAULT_COUNTERPARTIES: Address[] = [
@@ -29,9 +26,10 @@ export const DEFAULT_COUNTERPARTIES: Address[] = [
 
 // ── API base URLs ──
 export const INFRA_API_BASE =
-  process.env.NEXT_PUBLIC_INFRA_API_URL ?? "http://localhost:4000";
+  process.env.NEXT_PUBLIC_INFRA_API_URL ?? "http://localhost:8787";
+/** Demo control (IF-10) — default matches `npm run demo` (services/demo-control, port 7402). */
 export const RUNTIME_API_BASE =
-  process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:4001";
+  process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402";
 
 // ── Feature flags ──
 export const USE_MOCKS =

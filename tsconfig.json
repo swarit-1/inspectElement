@@ -22,7 +22,8 @@
     "packages/**/*.ts",
     "agents/**/*.ts",
     "scripts/**/*.ts",
-    "services/**/*.ts"
+    "services/demo-control/**/*.ts",
+    "services/mock-x402/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**"]
 }

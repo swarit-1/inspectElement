@@ -5,7 +5,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Section } from "@/components/ui/section";
-import { PLACEHOLDER_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES } from "@/lib/constants";
 import { guardedExecutorAbi } from "@/abi/guarded-executor";
 import type { Address, Hex } from "viem";
 
@@ -13,11 +13,14 @@ interface AgentDelegateProps {
   onDelegated: () => void;
 }
 
+const DEFAULT_AGENT =
+  process.env.NEXT_PUBLIC_DEFAULT_AGENT_ID ??
+  "0x00000000000000000000000000000000000000000000000000000000deadbeef";
+const DEFAULT_DELEGATE = process.env.NEXT_PUBLIC_DEFAULT_DELEGATE ?? "";
+
 export function AgentDelegate({ onDelegated }: AgentDelegateProps) {
-  const [agentId, setAgentId] = useState(
-    "0x00000000000000000000000000000000000000000000000000000000deadbeef"
-  );
-  const [delegate, setDelegate] = useState("");
+  const [agentId, setAgentId] = useState(DEFAULT_AGENT);
+  const [delegate, setDelegate] = useState(DEFAULT_DELEGATE);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ export function AgentDelegate({ onDelegated }: AgentDelegateProps) {
 
     writeContract(
       {
-        address: PLACEHOLDER_ADDRESSES.guardedExecutor,
+        address: CONTRACT_ADDRESSES.guardedExecutor,
         abi: guardedExecutorAbi,
         functionName: "setAgentDelegate",
         args: [agentId as Hex, delegate as Address, true],

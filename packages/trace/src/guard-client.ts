@@ -14,38 +14,29 @@ import {
   type Account,
   BaseError,
   ContractFunctionRevertedError,
+  parseEventLogs,
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { GuardedExecutorABI } from "./abi.js";
 import { GuardDecision, type ExecutionRequest } from "./types.js";
 import { loadDeploymentConfig } from "./config.js";
+import { decodeReasonLabel } from "./reason-codes.js";
 
 export interface PreflightResult {
   readonly decision: GuardDecision;
   readonly reasonCode: Hex;
-  readonly reasonString: string;
+  /** Human-readable label, e.g. COUNTERPARTY_NOT_ALLOWED */
+  readonly reasonLabel: string;
 }
 
 export class GuardRejectedError extends Error {
   constructor(
     public readonly reasonCode: Hex,
-    public readonly reasonString: string
+    public readonly reasonLabel: string
   ) {
-    super(`Guard rejected execution: ${reasonString} (${reasonCode})`);
+    super(`Guard rejected execution: ${reasonLabel} (${reasonCode})`);
     this.name = "GuardRejectedError";
   }
-}
-
-/**
- * Known reason code mappings for human-readable output.
- */
-const REASON_CODE_NAMES: Record<string, string> = {
-  // These will be populated from Dev 1's actual keccak256 outputs
-  // For now, we match on known patterns
-};
-
-function decodeReasonCode(code: Hex): string {
-  return REASON_CODE_NAMES[code] ?? `UNKNOWN(${code.slice(0, 18)}...)`;
 }
 
 export interface GuardClientOptions {
@@ -59,9 +50,14 @@ export interface GuardClientOptions {
  * @param account - The wallet account (delegate key) to send transactions from
  * @param options - Optional RPC URL and chain overrides
  */
+export interface ExecuteResult {
+  readonly receiptId: Hex;
+  readonly txHash: Hex;
+}
+
 export interface GuardClient {
   preflight(req: ExecutionRequest): Promise<PreflightResult>;
-  execute(req: ExecutionRequest): Promise<Hex>;
+  execute(req: ExecutionRequest): Promise<ExecuteResult>;
 }
 
 export function createGuardClient(
@@ -118,7 +114,7 @@ export function createGuardClient(
     return {
       decision: decision as GuardDecision,
       reasonCode,
-      reasonString: decodeReasonCode(reasonCode),
+      reasonLabel: decodeReasonLabel(reasonCode),
     };
   }
 
@@ -129,7 +125,7 @@ export function createGuardClient(
    * @returns receiptId on success
    * @throws GuardRejectedError if the guard rejects
    */
-  async function execute(req: ExecutionRequest): Promise<Hex> {
+  async function execute(req: ExecutionRequest): Promise<ExecuteResult> {
     try {
       const { request } = await publicClient.simulateContract({
         account: walletClient.account,
@@ -157,7 +153,6 @@ export function createGuardClient(
 
       const txHash = await walletClient.writeContract(request);
 
-      // Wait for receipt to get the receiptId from logs
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
@@ -166,9 +161,19 @@ export function createGuardClient(
         throw new Error(`Transaction reverted: ${txHash}`);
       }
 
-      // Return the txHash — the receiptId is in the emitted event logs
-      // which Dev 3's indexer will pick up
-      return txHash;
+      const actionLogs = parseEventLogs({
+        abi: GuardedExecutorABI,
+        eventName: "ActionReceipt",
+        logs: receipt.logs,
+      });
+      const first = actionLogs[0];
+      if (!first || first.args.receiptId === undefined) {
+        throw new Error(
+          `ActionReceipt not found in tx logs: ${txHash}. Is GuardedExecutor the emitter?`
+        );
+      }
+
+      return { receiptId: first.args.receiptId as Hex, txHash };
     } catch (err) {
       // Decode GuardRejected custom error
       if (err instanceof BaseError) {
@@ -179,10 +184,7 @@ export function createGuardClient(
           const errorData = revertError.data;
           if (errorData?.errorName === "GuardRejected") {
             const reasonCode = (errorData.args as [Hex])[0];
-            throw new GuardRejectedError(
-              reasonCode,
-              decodeReasonCode(reasonCode)
-            );
+            throw new GuardRejectedError(reasonCode, decodeReasonLabel(reasonCode));
           }
         }
       }

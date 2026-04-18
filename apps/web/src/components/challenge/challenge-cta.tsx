@@ -1,15 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import {
+  useAccount,
+  useReadContract,
+  useSendTransaction,
+  useWriteContract,
+  skipToken,
+} from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import { maxUint256, type Hex } from "viem";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { prepareChallenge } from "@/lib/api";
-import { PLACEHOLDER_ADDRESSES, formatUsdc } from "@/lib/constants";
+import { prepareChallenge, pollChallengeIdForReceipt } from "@/lib/api";
+import { CONTRACT_ADDRESSES, formatUsdc } from "@/lib/constants";
+import { config } from "@/lib/wagmi";
 import { erc20Abi } from "@/abi/erc20";
-import { challengeArbiterAbi } from "@/abi/challenge-arbiter";
 import type { ReceiptDetail } from "@/lib/types";
-import type { Hex } from "viem";
 
 interface ChallengeCTAProps {
   receipt: ReceiptDetail;
@@ -30,7 +37,22 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
   const [error, setError] = useState<string | null>(null);
   const [bondAmount, setBondAmount] = useState<string | null>(null);
 
-  const { writeContract } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
+
+  const { data: allowance = 0n } = useReadContract({
+    address: CONTRACT_ADDRESSES.usdc,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args:
+      address && CONTRACT_ADDRESSES.challengeArbiter
+        ? [address, CONTRACT_ADDRESSES.challengeArbiter]
+        : skipToken,
+  });
+
+  const canChallenge =
+    (receipt.status === "overspend" || receipt.challengeable) &&
+    !receipt.challengeFiled;
 
   async function handleFileChallenge() {
     if (!address) return;
@@ -38,64 +60,48 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
     setStep("preparing");
 
     try {
-      // Step 1: Prepare challenge (IF-07)
       const prep = await prepareChallenge(receipt.receiptId, address);
 
-      if (!prep.eligible) {
-        setError(prep.reason);
+      if (!prep.eligible || !prep.to || !prep.data) {
+        setError(prep.reason ?? "Challenge not eligible");
         setStep("error");
         return;
       }
 
       setBondAmount(prep.bondAmount);
+      const bond = BigInt(prep.bondAmount);
 
-      // Step 2: Approve USDC bond
-      setStep("approving");
-      await new Promise<void>((resolve, reject) => {
-        writeContract(
-          {
-            address: PLACEHOLDER_ADDRESSES.usdc,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [
-              PLACEHOLDER_ADDRESSES.challengeArbiter,
-              BigInt(prep.bondAmount),
-            ],
-          },
-          {
-            onSuccess: () => resolve(),
-            onError: (err) => reject(err),
-          }
-        );
-      });
+      if (allowance < bond) {
+        setStep("approving");
+        const approveHash = await writeContractAsync({
+          address: CONTRACT_ADDRESSES.usdc,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [CONTRACT_ADDRESSES.challengeArbiter, maxUint256],
+        });
+        await waitForTransactionReceipt(config, { hash: approveHash });
+      }
 
-      // Step 3: File challenge (IF-08)
       setStep("filing");
-      writeContract(
-        {
-          address: PLACEHOLDER_ADDRESSES.challengeArbiter,
-          abi: challengeArbiterAbi,
-          functionName: "fileAmountViolation",
-          args: [receipt.receiptId],
-        },
-        {
-          onSuccess: () => {
-            setStep("submitted");
-            onChallengeSubmitted("1"); // mock challenge ID
-          },
-          onError: (err) => {
-            setError(err.message);
-            setStep("error");
-          },
-        }
+      const txHash = await sendTransactionAsync({
+        to: prep.to,
+        data: prep.data,
+      });
+      await waitForTransactionReceipt(config, { hash: txHash });
+
+      const challengeId = await pollChallengeIdForReceipt(
+        address,
+        receipt.receiptId as Hex
       );
+      setStep("submitted");
+      onChallengeSubmitted(challengeId ?? "pending");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Challenge failed");
       setStep("error");
     }
   }
 
-  if (receipt.status !== "overspend") return null;
+  if (!canChallenge) return null;
 
   return (
     <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5 flex flex-col gap-4">
@@ -105,7 +111,7 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
             Amount Violation Detected
           </h3>
           <p className="text-xs text-text-secondary mt-0.5">
-            This receipt ({formatUsdc(receipt.amount)} USDC) exceeds the 10 USDC per-tx cap
+            This receipt ({formatUsdc(receipt.amount)} USDC) exceeds the per-tx cap
           </p>
         </div>
         <StatusBadge variant="warning">Challengeable</StatusBadge>
@@ -130,8 +136,10 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
       ) : (
         <Button
           variant="danger"
-          onClick={handleFileChallenge}
-          loading={step === "preparing" || step === "approving" || step === "filing"}
+          onClick={() => void handleFileChallenge()}
+          loading={
+            step === "preparing" || step === "approving" || step === "filing"
+          }
           disabled={step !== "idle" && step !== "error"}
         >
           {step === "preparing"

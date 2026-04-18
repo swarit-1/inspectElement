@@ -14,8 +14,10 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
   const { data: challenge, isLoading } = useQuery<ChallengeDetail>({
     queryKey: ["challenge", challengeId],
     queryFn: () => getChallenge(challengeId),
-    refetchInterval: (query) =>
-      query.state.data?.status === "PENDING" ? 3000 : false,
+    refetchInterval: (query) => {
+      const s = query.state.data?.status;
+      return s === "PENDING" || s === "FILED" ? 3000 : false;
+    },
   });
 
   if (isLoading) {
@@ -29,6 +31,8 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
   if (!challenge) return null;
 
   const isUpheld = challenge.status === "UPHELD";
+  const isPending =
+    challenge.status === "PENDING" || challenge.status === "FILED";
 
   return (
     <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5 flex flex-col gap-4">
@@ -41,7 +45,7 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
             isUpheld ? "success" : challenge.status === "REJECTED" ? "danger" : "info"
           }
         >
-          {challenge.status}
+          {isPending ? "PENDING" : challenge.status}
         </StatusBadge>
       </div>
 

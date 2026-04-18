@@ -12,7 +12,7 @@ import {
   DEMO_MAX_SPEND_PER_DAY,
   DEMO_EXPIRY_DAYS,
   DEFAULT_COUNTERPARTIES,
-  PLACEHOLDER_ADDRESSES,
+  CONTRACT_ADDRESSES,
   USDC_DECIMALS,
   formatUsdc,
 } from "@/lib/constants";
@@ -60,7 +60,7 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
       // Step 1: Pin manifest with infra (IF-01)
       const manifest = {
         owner: address,
-        token: PLACEHOLDER_ADDRESSES.usdc,
+        token: CONTRACT_ADDRESSES.usdc,
         maxSpendPerTx: DEMO_MAX_SPEND_PER_TX.toString(),
         maxSpendPerDay: DEMO_MAX_SPEND_PER_DAY.toString(),
         allowedCounterparties: counterparties.filter(Boolean),
@@ -75,14 +75,14 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
       setStep("confirming");
       writeContract(
         {
-          address: PLACEHOLDER_ADDRESSES.intentRegistry,
+          address: CONTRACT_ADDRESSES.intentRegistry,
           abi: intentRegistryAbi,
           functionName: "commitIntent",
           args: [
             hash,
             {
               owner: address,
-              token: PLACEHOLDER_ADDRESSES.usdc,
+              token: CONTRACT_ADDRESSES.usdc,
               maxSpendPerTx: DEMO_MAX_SPEND_PER_TX,
               maxSpendPerDay: DEMO_MAX_SPEND_PER_DAY,
               allowedCounterparties: counterparties.filter(Boolean) as Address[],

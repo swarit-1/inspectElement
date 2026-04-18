@@ -7,12 +7,7 @@
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import {
-  keccak256,
-  encodePacked,
-  toHex,
-  type Hex,
-} from "viem";
+import { keccak256, encodePacked, type Hex } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import type { DecisionTrace } from "../packages/trace/src/types.js";
 import {
@@ -21,6 +16,7 @@ import {
   toTraceAck,
   loadDeploymentConfig,
   createGuardClient,
+  GuardDecision,
 } from "../packages/trace/src/index.js";
 
 export interface AgentEnv {
@@ -126,25 +122,26 @@ export async function runExecuteFlow(
   console.log(`[${scenario}] Running preflight...`);
   const preflightResult = await guardClient.preflight(executionRequest);
   console.log(
-    `[${scenario}] Preflight: decision=${preflightResult.decision}, reason=${preflightResult.reasonString}`
+    `[${scenario}] Preflight: decision=${preflightResult.decision}, reason=${preflightResult.reasonLabel}`
   );
 
-  if (preflightResult.decision !== 0) {
+  if (preflightResult.decision !== GuardDecision.GREEN) {
     return {
       scenario,
       outcome: "blocked",
-      reasonCode: preflightResult.reasonString,
+      reasonCode: preflightResult.reasonLabel,
     };
   }
 
   console.log(`[${scenario}] Executing guarded payment...`);
-  const txHash = await guardClient.execute(executionRequest);
-  console.log(`[${scenario}] Success! txHash: ${txHash}`);
+  const { receiptId, txHash } = await guardClient.execute(executionRequest);
+  console.log(`[${scenario}] Success! receiptId: ${receiptId} txHash: ${txHash}`);
 
   return {
     scenario,
     outcome: "success",
     txHash,
+    receiptId,
   };
 }
 
@@ -190,12 +187,12 @@ export async function runPreflightOnlyFlow(
   console.log("[blocked] Running preflight (will NOT execute)...");
   const result = await guardClient.preflight(executionRequest);
   console.log(
-    `[blocked] Preflight: decision=${result.decision}, reason=${result.reasonString}`
+    `[blocked] Preflight: decision=${result.decision}, reason=${result.reasonLabel}`
   );
 
   return {
     scenario: "blocked",
     outcome: "blocked",
-    reasonCode: result.reasonString,
+    reasonCode: result.reasonLabel,
   };
 }

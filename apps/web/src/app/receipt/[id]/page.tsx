@@ -67,7 +67,10 @@ export default function ReceiptPage() {
                   label="Timestamp"
                   value={new Date(receipt.timestamp * 1000).toLocaleString()}
                 />
-                <DataRow label="Trace URI" value={receipt.traceURI} />
+                <DataRow
+                  label="Trace URI"
+                  value={receipt.traceURI || "—"}
+                />
               </div>
 
               <div className="mt-4 pt-4 border-t border-border-subtle">

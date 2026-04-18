@@ -1,4 +1,4 @@
-import { formatUsdc, truncateAddress, PLACEHOLDER_ADDRESSES } from "@/lib/constants";
+import { formatUsdc, truncateAddress, CONTRACT_ADDRESSES } from "@/lib/constants";
 import type { Address, Hex } from "viem";
 
 interface IntentPreviewProps {
@@ -19,7 +19,7 @@ export function IntentPreview({
   const expiry = Math.floor(Date.now() / 1000) + expiryDays * 86400;
 
   const manifest = {
-    token: PLACEHOLDER_ADDRESSES.usdc,
+    token: CONTRACT_ADDRESSES.usdc,
     maxSpendPerTx: maxSpendPerTx.toString(),
     maxSpendPerDay: maxSpendPerDay.toString(),
     allowedCounterparties: counterparties,

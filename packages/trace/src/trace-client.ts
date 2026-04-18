@@ -57,6 +57,10 @@ export async function uploadTrace(
   const localDigest = computeContextDigest(trace);
   const canonicalJson = serializeCanonical(trace);
 
+  // Send `trace` as a parsed object so Dev 3 can run canonicalize(trace) on JSON
+  // (same bytes as our serializeCanonical). Sending a string would double-encode.
+  const tracePayload = JSON.parse(canonicalJson) as Record<string, unknown>;
+
   const response = await fetch(`${serviceUrl}/v1/traces`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -64,7 +68,7 @@ export async function uploadTrace(
       agentId: trace.agentId,
       owner: trace.owner,
       contextDigest: localDigest,
-      trace: canonicalJson,
+      trace: tracePayload,
     }),
   });
 

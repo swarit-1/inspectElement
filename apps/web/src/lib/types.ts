@@ -47,17 +47,17 @@ export interface TraceResponse {
 
 export interface ChallengePrep {
   eligible: boolean;
-  reason: string;
+  reason: string | null;
   bondAmount: string;
-  to: Address;
-  data: Hex;
+  to: Address | null;
+  data: Hex | null;
   value: string;
   chainId: number;
 }
 
 // ── Feed types ──
 
-export type FeedItemType = "receipt" | "blocked" | "challenge";
+export type FeedItemType = "receipt" | "blocked" | "challenge" | "intent";
 
 export type ReceiptStatus = "confirmed" | "overspend";
 export type BlockedReason =
@@ -68,8 +68,19 @@ export type BlockedReason =
   | "INVALID_TRACE_ACK"
   | "DELEGATE_NOT_APPROVED";
 
-export type ChallengeStatus = "PENDING" | "UPHELD" | "REJECTED";
+export type ChallengeStatus = "PENDING" | "FILED" | "UPHELD" | "REJECTED";
 export type ChallengeType = "AmountViolation";
+
+export interface FeedItemIntent {
+  type: "intent";
+  id: string;
+  timestamp: number;
+  intentHash: Hex;
+  owner: Address;
+  manifestURI: string;
+  active: boolean;
+  txHash: Hex;
+}
 
 export interface FeedItemReceipt {
   type: "receipt";
@@ -110,7 +121,11 @@ export interface FeedItemChallenge {
   txHash?: Hex;
 }
 
-export type FeedItem = FeedItemReceipt | FeedItemBlocked | FeedItemChallenge;
+export type FeedItem =
+  | FeedItemIntent
+  | FeedItemReceipt
+  | FeedItemBlocked
+  | FeedItemChallenge;
 
 // ── Receipt detail ──
 
@@ -129,6 +144,9 @@ export interface ReceiptDetail {
   timestamp: number;
   txHash: Hex;
   status: ReceiptStatus;
+  challengeable?: boolean;
+  challengeWindowEndsAt?: number;
+  challengeFiled?: boolean;
 }
 
 // ── Challenge detail ──
@@ -158,6 +176,17 @@ export interface DemoStatus {
   reasonCode?: BlockedReason;
   receiptId?: Hex;
   error?: string;
+}
+
+/** Raw last-run payload from demo-control `GET /demo/status`. */
+export interface DemoStatusLast {
+  scenarioId: string;
+  status: "running" | "completed" | "failed";
+  outcome?: "success" | "blocked" | "failed" | null;
+  txHash?: string | null;
+  reasonCode?: string | null;
+  receiptId?: string | null;
+  error?: string | null;
 }
 
 // ── App state ──

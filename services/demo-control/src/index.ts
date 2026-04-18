@@ -42,6 +42,10 @@ function main() {
     next();
   });
 
+  app.options("*", (_req, res) => {
+    res.sendStatus(204);
+  });
+
   /**
    * POST /demo/run-legit
    * Triggers the legitimate 2 USDC payment agent.

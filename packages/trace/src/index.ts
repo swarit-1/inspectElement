@@ -23,7 +23,13 @@ export { computeContextDigest } from "./digest.js";
 export { uploadTrace, toTraceAck, TraceDigestMismatchError, TraceUploadError } from "./trace-client.js";
 export type { TraceUploadResponse } from "./trace-client.js";
 export { createGuardClient, GuardRejectedError } from "./guard-client.js";
-export type { PreflightResult, GuardClientOptions, GuardClient } from "./guard-client.js";
+export type {
+  PreflightResult,
+  GuardClientOptions,
+  GuardClient,
+  ExecuteResult,
+} from "./guard-client.js";
+export { REASON_CODE_HEX, decodeReasonLabel } from "./reason-codes.js";
 export { loadDeploymentConfig, clearConfigCache } from "./config.js";
 export type { DeploymentConfig } from "./config.js";
 export { GuardedExecutorABI, AgentRegistryABI, ERC20ABI } from "./abi.js";

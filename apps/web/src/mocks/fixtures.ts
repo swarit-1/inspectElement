@@ -107,6 +107,8 @@ export const MOCK_RECEIPT_DETAIL: ReceiptDetail = {
   txHash:
     "0xaaaa000000000000000000000000000000000000000000000000000000000002" as Hex,
   status: "overspend",
+  challengeable: true,
+  challengeFiled: false,
 };
 
 // ── Challenge detail ──

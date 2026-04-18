@@ -90,6 +90,23 @@ export const GuardedExecutorABI = [
     name: "GuardRejected",
     inputs: [{ name: "reasonCode", type: "bytes32" }],
   },
+  {
+    type: "event",
+    name: "ActionReceipt",
+    inputs: [
+      { name: "receiptId", type: "bytes32", indexed: true },
+      { name: "owner", type: "address", indexed: true },
+      { name: "agentId", type: "bytes32", indexed: false },
+      { name: "intentHash", type: "bytes32", indexed: false },
+      { name: "target", type: "address", indexed: false },
+      { name: "token", type: "address", indexed: false },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "callDataHash", type: "bytes32", indexed: false },
+      { name: "contextDigest", type: "bytes32", indexed: false },
+      { name: "nonce", type: "uint256", indexed: false },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
 export const AgentRegistryABI = [

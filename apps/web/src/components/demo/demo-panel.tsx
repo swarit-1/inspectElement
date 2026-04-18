@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { runDemoScenario, getDemoStatus, setMockDemoOverride } from "@/lib/api";
+import { runDemoScenario, waitForDemoScenario } from "@/lib/api";
 import { USE_MOCKS, truncateAddress } from "@/lib/constants";
 import type { DemoScenario, DemoStatus, DemoRunStatus } from "@/lib/types";
 import type { Hex } from "viem";
@@ -48,34 +48,19 @@ export function DemoPanel() {
     }));
 
     try {
-      await runDemoScenario(scenario);
-
-      // Poll status
       if (USE_MOCKS) {
-        // Simulate result after delay
         await new Promise((r) => setTimeout(r, 2000));
         const mockResult = getMockResult(scenario);
         setStatuses((prev) => ({
           ...prev,
           [scenario]: mockResult,
         }));
-      } else {
-        // Poll real API
-        let attempts = 0;
-        while (attempts < 30) {
-          await new Promise((r) => setTimeout(r, 1000));
-          const status = await getDemoStatus();
-          if (status.status !== "running") {
-            setStatuses((prev) => ({ ...prev, [scenario]: status }));
-            return;
-          }
-          attempts++;
-        }
-        setStatuses((prev) => ({
-          ...prev,
-          [scenario]: { scenario, status: "failed", error: "Timeout" },
-        }));
+        return;
       }
+
+      const scenarioId = await runDemoScenario(scenario);
+      const result = await waitForDemoScenario(scenario, scenarioId);
+      setStatuses((prev) => ({ ...prev, [scenario]: result }));
     } catch (err) {
       setStatuses((prev) => ({
         ...prev,
@@ -96,7 +81,10 @@ export function DemoPanel() {
         </h2>
         <p className="text-sm text-text-secondary mt-1">
           Trigger scripted agent scenarios to demonstrate IntentGuard&apos;s
-          guard and recourse mechanisms.
+          guard and recourse mechanisms. Runtime API:{" "}
+          <code className="text-xs font-mono bg-bg-raised px-1 rounded">
+            {process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402"}
+          </code>
         </p>
       </div>
 
@@ -108,7 +96,7 @@ export function DemoPanel() {
             description={description}
             variant={variant}
             status={statuses[id]}
-            onRun={() => handleRun(id)}
+            onRun={() => void handleRun(id)}
           />
         ))}
       </div>
@@ -149,9 +137,7 @@ function ScenarioCard({
         </Button>
       </div>
 
-      {status.status === "success" && (
-        <ResultCard status={status} />
-      )}
+      {status.status === "success" && <ResultCard status={status} />}
 
       {status.status === "failed" && (
         <div className="text-sm text-danger bg-danger-dim rounded-[--radius-md] px-3 py-2">
@@ -191,16 +177,16 @@ function ResultCard({ status }: { status: DemoStatus }) {
   );
 }
 
-// ── Mock results ──
-
 function getMockResult(scenario: DemoScenario): DemoStatus {
   switch (scenario) {
     case "legit":
       return {
         scenario: "legit",
         status: "success",
-        txHash: "0xaaaa000000000000000000000000000000000000000000000000000000000001" as Hex,
-        receiptId: "0x0000000000000000000000000000000000000000000000000000000000000001" as Hex,
+        txHash:
+          "0xaaaa000000000000000000000000000000000000000000000000000000000001" as Hex,
+        receiptId:
+          "0x0000000000000000000000000000000000000000000000000000000000000001" as Hex,
       };
     case "blocked":
       return {
@@ -212,8 +198,10 @@ function getMockResult(scenario: DemoScenario): DemoStatus {
       return {
         scenario: "overspend",
         status: "success",
-        txHash: "0xaaaa000000000000000000000000000000000000000000000000000000000002" as Hex,
-        receiptId: "0x0000000000000000000000000000000000000000000000000000000000000002" as Hex,
+        txHash:
+          "0xaaaa000000000000000000000000000000000000000000000000000000000002" as Hex,
+        receiptId:
+          "0x0000000000000000000000000000000000000000000000000000000000000002" as Hex,
       };
   }
 }

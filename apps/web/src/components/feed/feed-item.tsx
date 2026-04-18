@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatUsdc, truncateAddress } from "@/lib/constants";
 import type {
   FeedItem as FeedItemType,
+  FeedItemIntent,
   FeedItemReceipt,
   FeedItemBlocked,
   FeedItemChallenge,
@@ -17,6 +18,8 @@ interface FeedItemProps {
 
 export function FeedItem({ item }: FeedItemProps) {
   switch (item.type) {
+    case "intent":
+      return <IntentRow item={item} />;
     case "receipt":
       return <ReceiptRow item={item} />;
     case "blocked":
@@ -24,6 +27,27 @@ export function FeedItem({ item }: FeedItemProps) {
     case "challenge":
       return <ChallengeRow item={item} />;
   }
+}
+
+function IntentRow({ item }: { item: FeedItemIntent }) {
+  return (
+    <div className="flex items-center gap-4 px-4 py-3.5 rounded-[--radius-md] bg-bg-surface/80">
+      <div className="w-9 h-9 rounded-full bg-info-dim shrink-0 flex items-center justify-center">
+        <DocIcon className="w-4 h-4 text-info" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-text-primary">
+            Intent committed
+          </span>
+          <StatusBadge variant="info">{item.active ? "Active" : "Revoked"}</StatusBadge>
+        </div>
+        <div className="text-xs text-text-tertiary mt-0.5 font-mono truncate">
+          {truncateAddress(item.intentHash, 8)} · {formatTime(item.timestamp)}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ReceiptRow({ item }: { item: FeedItemReceipt }) {
@@ -96,9 +120,11 @@ function BlockedRow({ item }: { item: FeedItemBlocked }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-text-primary">
-            {formatUsdc(item.amount)} USDC
+            {BigInt(item.amount) > 0n
+              ? `${formatUsdc(item.amount)} USDC`
+              : "Payment"}
           </span>
           <span className="text-text-tertiary text-xs">to</span>
           <span className="text-xs font-mono text-text-secondary">
@@ -117,6 +143,8 @@ function BlockedRow({ item }: { item: FeedItemBlocked }) {
 
 function ChallengeRow({ item }: { item: FeedItemChallenge }) {
   const isUpheld = item.status === "UPHELD";
+  const isPending =
+    item.status === "PENDING" || item.status === "FILED";
 
   return (
     <div
@@ -143,7 +171,7 @@ function ChallengeRow({ item }: { item: FeedItemChallenge }) {
             Challenge {item.challengeType}
           </span>
           <StatusBadge variant={isUpheld ? "success" : "info"}>
-            {item.status}
+            {isPending ? "PENDING" : item.status}
           </StatusBadge>
         </div>
         <div className="text-xs text-text-tertiary mt-0.5">
@@ -200,6 +228,15 @@ function ScaleIcon({ className }: { className?: string }) {
       <path d="M4 7l8-4 8 4" />
       <path d="M4 7l-2 8h8L4 7z" />
       <path d="M20 7l2 8h-8l6-8z" />
+    </svg>
+  );
+}
+
+function DocIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
     </svg>
   );
 }
