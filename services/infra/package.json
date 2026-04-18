@@ -14,7 +14,6 @@
     "reindex": "tsx scripts/reindex.ts",
     "reset": "tsx scripts/reset.ts",
     "keygen": "tsx scripts/keygen.ts",
-    "print-register-signer": "tsx scripts/print-register-signer.ts",
     "smoke": "tsx scripts/smoke-trace.ts",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -271,29 +271,44 @@ without code changes on their side.
 `.env.example` calls out the same issue with a `>>>>> READ THIS BEFORE THE
 DEMO <<<<<` block. No more silently-broken traceURIs after the deploy.
 
-### Signer registration — copy-paste runbook script
+### Signer registration — folded into the deploy script (no more manual tx)
 
-`scripts/print-register-signer.ts` reads the loaded private keys + the
-deployment manifest and prints, for each contract:
+The original plan was to ship a `print-register-signer` runbook script and
+have Dev 1 hand-paste a `cast send` transaction after deploy. That step is
+now eliminated entirely:
 
-- The function selector and decoded args
-- The full ABI-encoded calldata
-- A copy-paste `cast send ...` invocation Dev 1 can run as the contract owner
-- A `cast call ...` verification to confirm the change landed
+- `scripts/buildDeployParameters.ts` reads the private keys from
+  `services/infra/.env.local`, derives the public addresses, and writes
+  `ignition/parameters/<network>.json`.
+- `ignition/modules/Deploy.ts` already accepts `traceAckSigner` and
+  `reviewerSigner` as constructor arguments to `GuardedExecutor` and
+  `ChallengeArbiter`.
+- `scripts/writeArtifacts.ts` was rewritten to emit
+  `deployments/<network>.json` in the exact shape Dev 3's `loadDeployments`
+  expects (previously it wrote `{chainId, network, addresses}` which the
+  infra loader silently rejected, leaving the indexer disabled).
+- `npm run deploy:base-sepolia` now chains all three steps so Dev 1 runs one
+  command and the signer is wired by the constructor — no follow-up admin
+  transaction.
 
-Run it with `npm --prefix services/infra run print-register-signer`. It
-never prints private keys.
+`GuardedExecutor.setTraceAckSigner(address)` and
+`ChallengeArbiter.setReviewerSigner(address)` still exist for **key
+rotation** (e.g. compromised key), but are no longer required for the demo
+to work.
+
+The legacy `print-register-signer` script and the broken `writeArtifacts.ts`
+output shape are gone.
 
 ---
 
 ## Remaining ops actions (not code)
 
-1. **Dev 1: actually run the registration tx.** Use the output of
-   `npm run print-register-signer` to call `setTraceAckSigner` on
-   `GuardedExecutor`. Until this lands, `executeWithGuard` will revert.
-2. **Whoever ships the demo: set `PUBLIC_BASE_URL`.** The boot log will warn
+1. **Whoever ships the demo: set `PUBLIC_BASE_URL`.** The boot log will warn
    if it's still localhost; flip it to whatever public host (or ngrok URL)
    the infra service is reachable at before kicking off the demo.
+
+That's it. The signer-registration step that used to live here is no longer
+a runbook item — the deploy script does it for you.
 
 ---
 
@@ -310,8 +325,10 @@ never prints private keys.
 >    interfaces — five wrong / missing event definitions are fixed; the
 >    parity test now enforces convergence so they can't drift again.
 > 5. Boot logs warn loudly if `PUBLIC_BASE_URL` is still localhost.
-> 6. `npm run print-register-signer` prints the exact `cast send` Dev 1 needs
->    to register the TraceAck signer on `GuardedExecutor`.
+> 6. `npm run deploy:base-sepolia` now derives the signer addresses from
+>    Dev 3's keys, passes them to the constructor, and writes
+>    `deployments/base-sepolia.json` in the shape the infra service expects.
+>    No more manual `setTraceAckSigner` tx after deploy.
 >
-> Outstanding ops actions: Dev 1 runs the registration tx; whoever deploys
-> sets `PUBLIC_BASE_URL` to the public host. No code changes required.
+> Outstanding ops actions: whoever deploys sets `PUBLIC_BASE_URL` to the
+> public host. No code changes required.
