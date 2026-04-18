@@ -1,18 +1,33 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": ".",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "dist"
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@intentguard/trace": ["./packages/trace/src/index.ts"]
+    }
   },
   "include": [
+    "packages/**/*.ts",
+    "agents/**/*.ts",
+    "scripts/**/*.ts",
+    "services/demo-control/**/*.ts",
+    "services/mock-x402/**/*.ts",
+
     "hardhat.config.ts",
     "ignition/**/*.ts",
-    "test/**/*.ts",
-    "scripts/**/*.ts"
-  ]
+    "test/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "**/__tests__/**"]
 }
