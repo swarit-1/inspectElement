@@ -1,6 +1,6 @@
 # 1. Executive Summary
 
-IntentGuard is a guard-and-recourse layer for AI agents that move USDC on EVM chains. The hackathon MVP is intentionally narrow: one Base Sepolia ERC-4337 executor module, one intent schema, one deterministic challenge type (`AmountViolation`), one slash path, one trusted reviewer key stub, and one scripted USDC payment agent with legitimate and malicious runs.
+IntentGuard is a guard-and-recourse layer for AI agents that move USDC on EVM chains. The hackathon MVP is intentionally narrow: one Base Sepolia ERC-4337 executor module, one intent schema, one deterministic challenge type (`AmountViolation`), one slash path, one trusted reviewer key stub, one Gemini-powered reviewer copilot for non-authoritative incident summaries, one MongoDB Atlas-backed evidence store, and one scripted USDC payment agent with legitimate and malicious runs.
 
 The product problem is simple: once an agent can spend stablecoins, identity and payment rails are not enough. A valid agent can still be tricked by prompt injection or drift into actions the user did not approve. The missing primitive is not “can the agent pay,” but “did this payment match a user-approved intent, and what happens if it did not.”
 
@@ -8,7 +8,9 @@ The MVP solution combines:
 
 * hard pre-execution checks for the things that are cheap and deterministic to enforce in a hackathon build: delegated agent key, USDC-only token, counterparty allowlist, expiry, day-cap, and trace availability attestation;
 * cryptographic action receipts that commit to calldata and a hashed decision trace;
-* one deterministic post-execution recourse path: if the executed amount exceeds the intent’s per-tx cap, the user can file `AmountViolation` and slash the operator’s stake.
+* one deterministic post-execution recourse path: if the executed amount exceeds the intent’s per-tx cap, the user can file `AmountViolation` and slash the operator’s stake;
+* a MongoDB Atlas-backed off-chain evidence layer for manifests, traces, indexed receipts, challenges, and reviewer metadata;
+* a Gemini API reviewer copilot that explains stored traces and receipts to humans without affecting the deterministic slash path.
 
 Why now:
 
@@ -63,8 +65,9 @@ Demo-day end state:
 | Executor behavior                 | `GREEN` and `RED` only; `YELLOW` exists in interfaces but is not implemented in flow                          |
 | Hard pre-exec checks              | delegated key, token == USDC, target in allowlist, intent not expired, day-cap not exceeded, valid `TraceAck` |
 | Post-exec deterministic challenge | `receipt.amount > intent.maxSpendPerTx`                                                                       |
-| Semantic review                   | reviewer signer stub only; not in live path                                                                   |
+| Semantic review                   | reviewer signer stub remains authoritative; Gemini is assistive only and not in the live slash path          |
 | Challenge filing                  | user clicks in dashboard; infra prepares calldata; wallet sends on-chain tx                                   |
+| Off-chain evidence store          | MongoDB Atlas stores manifests, traces, indexed receipts, challenges, and reviewer summaries                  |
 | Stablecoin scope                  | USDC only                                                                                                     |
 
 ### Pass
@@ -100,7 +103,9 @@ The MVP is done when all of these are true:
 * `GuardedExecutor` accepts a valid live execution path and rejects a non-allowlisted path with a deterministic reason code.
 * `ActionReceipt` data is both emitted as events and stored on-chain in a challengeable receipt mapping.
 * The trace service returns a signed `TraceAck` and the guard verifies it on-chain.
+* Off-chain evidence for manifests, traces, indexed receipts, and challenges is persisted in MongoDB Atlas.
 * The frontend can commit an intent, delegate the agent key, trigger the three demo runs, view receipts, and file a challenge.
+* The `/review` flow can load stored evidence and render a Gemini-generated incident summary that never changes the deterministic `AmountViolation` outcome.
 * `ChallengeArbiter.fileAmountViolation(receiptId)` deterministically slashes stake and pays the user.
 * One runbook lets any teammate run the demo from a fresh browser session.
 
@@ -249,6 +254,13 @@ Blocked attempts:
 
 The runtime serializes `DecisionTrace v1`, computes `contextDigest = keccak256(canonicalTraceJson)`, uploads the full trace, receives a signed `TraceAck`, and includes both in `executeWithGuard`.
 
+MongoDB Atlas is the off-chain system of record for:
+
+* pinned manifest metadata;
+* trace metadata and cached trace payloads;
+* indexed receipts and challenges;
+* reviewer-facing incident summaries and replay metadata.
+
 On successful execution:
 
 * `GuardedExecutor` stores a `ReceiptSummary` mapping keyed by `receiptId`
@@ -293,7 +305,9 @@ Semantic path:
 
 * interface exists as `resolveByReviewer(...)`
 * one trusted reviewer signer is configurable
-* not used in the live demo
+* Gemini API may generate a non-authoritative incident summary and reviewer aid from stored trace + receipt evidence
+* Gemini output never changes the deterministic `AmountViolation` path and never blocks or approves live payments
+* not used in the live on-chain resolution path
 
 ### Layer 6 — Economic Layer: `StakeVault`
 
@@ -580,20 +594,21 @@ Exit criteria:
 
 ### 4.3.1 Scope & Ownership
 
-Owns the off-chain services that make receipts and challenges usable: manifest pinning, trace pinning, `TraceAck` signing, event indexing, read-model APIs, challenge-preparation pipeline, and the single-reviewer-key stub. Owns the replay-engine scaffold, but not live semantic judging. Does **not** own on-chain policy rules, LLM prompting, or the primary product UI.
+Owns the off-chain services that make receipts and challenges usable: manifest pinning, trace pinning, `TraceAck` signing, MongoDB Atlas evidence storage, event indexing, read-model APIs, challenge-preparation pipeline, the single-reviewer-key stub, and Gemini-powered reviewer summaries. Owns the replay-engine scaffold, but not live semantic judging. Does **not** own on-chain policy rules, LLM prompting on the hot execution path, or the primary product UI.
 
 ### 4.3.2 Deliverables
 
 1. Manifest pinning API for IF-01.
 2. Trace pinning API for IF-04.
 3. Service key management for signing `TraceAck`.
-4. Persistent storage for manifests, traces, indexed receipts, and indexed challenges.
+4. MongoDB Atlas storage for manifests, traces, indexed receipts, challenges, and cached reviewer summaries.
 5. Base Sepolia log indexer for IF-06.
 6. Read-model API for feed, receipt detail, and challenge detail (IF-09).
 7. Challenge-preparation API for `AmountViolation` (IF-07).
 8. Reviewer signer stub and endpoint for IF-11.
 9. Replay-engine scaffold that can load a stored trace bundle by `contextDigest` and return it for review.
-10. One ops README with env vars, signer key handling, and reindex/reset instructions.
+10. Gemini-powered reviewer summarizer that turns stored trace + receipt + challenge context into a non-authoritative incident summary.
+11. One ops README with env vars, signer key handling, and reindex/reset instructions.
 
 ### 4.3.3 Interface Contracts
 
@@ -612,7 +627,7 @@ Owns the off-chain services that make receipts and challenges usable: manifest p
 Exit criteria:
 
 * `POST /v1/manifests` and `POST /v1/traces` return stable hashes/signatures locally.
-* One local indexer decodes all protocol ABIs and writes to a local store.
+* One local indexer decodes all protocol ABIs and writes to the MongoDB schema or a dev-compatible Mongo store.
 * Feed and challenge response shapes are frozen.
 
 **Integration (hours 12–28)**
@@ -637,7 +652,9 @@ Exit criteria:
 | Risk                                | Why likely                            | Fallback                                                                                                 |
 | ----------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Walrus/IPFS pinning is unreliable   | storage services can fail or throttle | default to IPFS; if needed, serve JSON from a signed ngrok-backed URL and keep the same `TraceAck` shape |
-| Event indexing lags                 | subgraphs are slow for demos          | use direct viem log polling + SQLite/Postgres read model                                                 |
+| Event indexing lags                 | subgraphs are slow for demos          | use direct viem log polling + MongoDB Atlas read model                                                   |
+| MongoDB Atlas is unavailable        | managed services can fail or throttle | use a local Mongo-compatible dev store temporarily while preserving the same collections and document shape |
+| Gemini summaries are low quality    | LLM output is non-deterministic       | keep Gemini strictly advisory; reviewer signer or deterministic challenge path remains authoritative      |
 | User-signed challenge flow is flaky | approve + file challenge is two txs   | fallback to a funded watchdog relay behind the same UI button, but keep IF-07 response shape stable      |
 
 ### 4.3.6 Stretch Goals
@@ -812,14 +829,16 @@ These decisions need a yes/no answer early. Defaults are listed so the team can 
 
 | Question                           | Default                                                              |
 | ---------------------------------- | -------------------------------------------------------------------- |
-| Wallet/onboarding provider?        | **Privy** unless Coinbase Embedded is already configured and working |
-| Smart account base implementation? | **Minimal custom 4337 account** controlled by embedded wallet owner  |
-| Trace storage target?              | **IPFS** first; Walrus only as dual-write stretch                    |
-| Merchant path for legit payment?   | **Local/mock x402 merchant** with the same payment-required shape    |
-| Challenge bond amount?             | **1 USDC**                                                           |
-| Operator stake amount?             | **50 USDC**                                                          |
-| Bronze challenge window?           | **72 hours**                                                         |
-| Live meaning of `maxSpendPerTx`?   | **post-exec deterministic slash invariant for the hackathon demo**   |
+| Wallet/onboarding provider?        | **Privy** unless Coinbase Embedded is already configured and working         |
+| Smart account base implementation? | **Minimal custom 4337 account** controlled by embedded wallet owner          |
+| Trace storage target?              | **IPFS** first; Walrus only as dual-write stretch                            |
+| Off-chain evidence store?          | **MongoDB Atlas**                                                           |
+| Reviewer copilot?                  | **Gemini API** for assistive incident summaries only; never on the hot path |
+| Merchant path for legit payment?   | **Local/mock x402 merchant** with the same payment-required shape            |
+| Challenge bond amount?             | **1 USDC**                                                                   |
+| Operator stake amount?             | **50 USDC**                                                                  |
+| Bronze challenge window?           | **72 hours**                                                                 |
+| Live meaning of `maxSpendPerTx`?   | **post-exec deterministic slash invariant for the hackathon demo**           |
 
 ---
 
@@ -897,8 +916,8 @@ These are possible, but they should stay off the critical path and the team shou
 
 | Track | Recommendation | Safe integration path |
 | ----- | -------------- | --------------------- |
-| `Best Use of Gemini API` | Possible | add a non-authoritative reviewer copilot that turns a stored trace + receipt into a human-readable incident summary; it must never decide slash outcomes or change the deterministic challenge path |
-| `Best Use of MongoDB Atlas` | Possible | use Atlas as the document store for manifests, traces, indexed receipts, and challenges instead of a local SQLite/Postgres default |
+| `Best Use of Gemini API` | Included | Gemini generates a non-authoritative reviewer copilot summary from stored trace + receipt evidence; it never decides slash outcomes or changes the deterministic challenge path |
+| `Best Use of MongoDB Atlas` | Included | MongoDB Atlas is the document store for manifests, traces, indexed receipts, challenges, and reviewer summaries |
 | `Best Use of AWS` | Possible | deploy the web app, infra service, and read-model pipeline on AWS while keeping all on-chain logic unchanged |
 | `Best Use of Supabase` | Possible | use Supabase Postgres/Storage/Realtime for the read model and dashboard feed if the team prefers managed Postgres over Atlas |
 
