@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bootstrap": "tsx scripts/bootstrap-agent.ts",
+    "reset": "tsx scripts/reset.ts",
     "demo": "tsx services/demo-control/src/index.ts",
     "mock-x402": "tsx services/mock-x402/src/index.ts",
     "agent:legit": "tsx agents/legit.ts",

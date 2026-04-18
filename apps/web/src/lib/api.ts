@@ -223,10 +223,11 @@ export function mapLastToDemoStatus(
   }
 
   if (last.outcome === "blocked") {
+    const rc = (last.reasonCode ?? "COUNTERPARTY_NOT_ALLOWED") as string;
     return {
       scenario,
       status: "success",
-      reasonCode: (last.reasonCode as BlockedReason) ?? "COUNTERPARTY_NOT_ALLOWED",
+      reasonCode: rc as BlockedReason,
     };
   }
 
