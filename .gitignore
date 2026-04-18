@@ -1,6 +1,13 @@
 node_modules/
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
 dist/
-*.env
+ignition/deployments/
+.env
 .env.*
 !.env.example
 LOCAL_PROJECT_OVERVIEW.md
+.DS_Store
