@@ -872,3 +872,59 @@ These decisions need a yes/no answer early. Defaults are listed so the team can 
 * **Anthropic Sleeper Agents** — research motivating why post-hoc auditability and constraints matter for model-controlled actions.
 * **MCP (Model Context Protocol)** — standardized tool access surface and prompt-injection vector.
 * **Walrus** — decentralized storage option for trace blobs.
+
+---
+
+# 9. Proposed Prize Track Overlay (For Review)
+
+IntentGuard can credibly compete for multiple Hook 'Em Hacks and MLH prize tracks without changing the core MVP. The rule for any prize-track work is simple: it must strengthen the existing Base Sepolia + USDC + guard-and-recourse story, not create a second product.
+
+## 9.1 Primary tracks to target
+
+These tracks are already aligned with the current PRD and require mostly packaging, positioning, and demo polish rather than architectural pivots.
+
+| Track | Fit | Why it fits | Incremental work |
+| ----- | --- | ----------- | ---------------- |
+| `SECURITY IN AN AI-FIRST WORLD` | Very strong | IntentGuard exists to stop or recourse prompt-injected or policy-violating agent payments. The blocked attack + overspend challenge is already a security story. | tighten threat-model language in demo script; show blocked + slashed flow clearly |
+| `BLOCKCHAIN & DECENTRALIZED AI` | Very strong | The MVP is an AI-agent payment system with on-chain guardrails, on-chain receipts, and on-chain recourse. | emphasize smart-account, receipt, and challenge mechanics in presentation |
+| `INTELLIGENT FINANCIAL & MARKET SYSTEMS` | Very strong | The product is programmable risk control for autonomous stablecoin payments. | frame the product as payments/risk infrastructure for agentic finance |
+| `Most Startup Ready` | Strong | IntentGuard has a clear user, pain point, MVP, and post-hackathon roadmap. | sharpen the go-to-market and platform story in the pitch/demo |
+| `Best Domain Name from GoDaddy Registry` | Easy win | The dashboard and docs can ship under a dedicated branded domain with no product rewrite. | register and use an IntentGuard domain for the live demo |
+
+## 9.2 Secondary sponsor-track overlays
+
+These are possible, but they should stay off the critical path and the team should pick at most one.
+
+| Track | Recommendation | Safe integration path |
+| ----- | -------------- | --------------------- |
+| `Best Use of Gemini API` | Possible | add a non-authoritative reviewer copilot that turns a stored trace + receipt into a human-readable incident summary; it must never decide slash outcomes or change the deterministic challenge path |
+| `Best Use of MongoDB Atlas` | Possible | use Atlas as the document store for manifests, traces, indexed receipts, and challenges instead of a local SQLite/Postgres default |
+| `Best Use of AWS` | Possible | deploy the web app, infra service, and read-model pipeline on AWS while keeping all on-chain logic unchanged |
+| `Best Use of Supabase` | Possible | use Supabase Postgres/Storage/Realtime for the read model and dashboard feed if the team prefers managed Postgres over Atlas |
+
+## 9.3 Tracks to explicitly avoid for this MVP
+
+These tracks either conflict with the current product thesis or would force bolted-on features that weaken the demo.
+
+| Track | Why not now |
+| ----- | ----------- |
+| `Best Use of Solana` | conflicts with the explicit MVP non-goal of supporting a second chain; adding Solana would dilute the Base Sepolia / EVM story |
+| `Best Use of ElevenLabs` | audio is not part of the core risk-control, payments, or dispute flow and would read as tacked on |
+| `MULTIMODAL SEARCH & GENERATION` | the current product is not a multimodal retrieval or generation system |
+| `PATIENT-CENTERED TECH` | would require changing the product domain rather than extending the current one |
+
+## 9.4 Prize-track guardrails
+
+Any prize-track extension must preserve these rules:
+
+* no second chain in the live demo;
+* no second token in the live demo;
+* no sponsor dependency on the hot execution path of `executeWithGuard`;
+* no AI model added to the deterministic `AmountViolation` resolution path;
+* choose one infrastructure overlay at most (`MongoDB Atlas`, `Supabase`, or `AWS`) to avoid scope fragmentation.
+
+## 9.5 Demo framing update
+
+For judging, the canonical story should be:
+
+> IntentGuard is security and recourse infrastructure for agentic stablecoin payments. It lets developers deploy AI payment agents with bounded permissions, cryptographic audit trails, and deterministic user recovery when an allowed agent action still exceeds the user-approved spend policy.

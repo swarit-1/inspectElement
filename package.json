@@ -1,6 +1,8 @@
 {
-  "name": "inspect-element",
+  "name": "intentguard-runtime",
+  "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/web"
   ],
@@ -8,6 +10,25 @@
     "dev": "npm --workspace web run dev",
     "build": "npm --workspace web run build",
     "start": "npm --workspace web run start",
-    "lint": "npm --workspace web run lint"
+    "lint": "npm --workspace web run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bootstrap": "tsx scripts/bootstrap-agent.ts",
+    "demo": "tsx services/demo-control/src/index.ts",
+    "mock-x402": "tsx services/mock-x402/src/index.ts",
+    "agent:legit": "tsx agents/legit.ts",
+    "agent:blocked": "tsx agents/blocked.ts",
+    "agent:overspend": "tsx agents/overspend.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
