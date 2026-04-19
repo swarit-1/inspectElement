@@ -18,7 +18,7 @@ interface ShellProps {
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", seq: "01" },
-  { href: "/demo", label: "Scenarios", seq: "02" },
+  { href: "/theater", label: "Theater", seq: "02" },
   { href: "/review", label: "Review", seq: "03" },
 ] as const;
 

@@ -33,6 +33,11 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_PRIVY_APP_ID: privyAppId,
   },
+  async redirects() {
+    return [
+      { source: "/demo", destination: "/theater", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

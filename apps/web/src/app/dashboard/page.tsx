@@ -1,41 +1,99 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import { Shell } from "@/components/ui/shell";
-import { BudgetGauge } from "@/components/ui/budget-gauge";
 import { WalletGate } from "@/components/ui/wallet-gate";
-import { OwnerSpendApproval } from "@/components/approval/owner-spend-approval";
-import { IntentBuilder } from "@/components/intent/intent-builder";
-import { AgentDelegate } from "@/components/delegation/agent-delegate";
 import { ActivityFeed } from "@/components/feed/activity-feed";
+import { PostureHeader } from "@/components/dashboard/posture-header";
+import { SetupCompletion } from "@/components/dashboard/setup-completion";
+import { ExposurePanel } from "@/components/dashboard/exposure-panel";
+import { QuickActions } from "@/components/dashboard/quick-actions";
 import { useFeed } from "@/hooks/use-feed";
-import {
-  DEMO_MAX_SPEND_PER_DAY,
-  DEMO_MAX_SPEND_PER_TX,
-} from "@/lib/constants";
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import type { FeedItemReceipt } from "@/lib/types";
+
+const FLAGS_STORAGE_KEY = "intentguard.onboarding.flags.v1";
+
+interface Flags {
+  policyCommitted: boolean;
+  ownerApproved: boolean;
+  delegated: boolean;
+  firstRunDone: boolean;
+}
+
+const DEFAULT_FLAGS: Flags = {
+  policyCommitted: false,
+  ownerApproved: false,
+  delegated: false,
+  firstRunDone: false,
+};
+
+function useOnboardingFlags(): Flags {
+  const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(FLAGS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<Flags>;
+      setFlags({ ...DEFAULT_FLAGS, ...parsed });
+    } catch {
+      // ignore malformed state
+    }
+  }, []);
+
+  return flags;
+}
 
 export default function DashboardPage() {
   const { address } = useAccount();
   const { data: feed } = useFeed();
+  const flags = useOnboardingFlags();
+  const progress = useOnboardingProgress({
+    policyCommitted: flags.policyCommitted,
+    delegated: flags.delegated,
+    firstRunDone: flags.firstRunDone,
+  });
+
   const [dayStart] = useState(() => Math.floor(Date.now() / 1000) - 86400);
 
-  // Today's confirmed-receipt total in raw 6-decimals
-  const { spentToday, lastTx } = useMemo(() => {
-    if (!feed) return { spentToday: 0n, lastTx: null as bigint | null };
-    const todays = feed
-      .filter(
-        (e): e is FeedItemReceipt =>
-          e.type === "receipt" &&
-          e.status === "confirmed" &&
-          e.timestamp >= dayStart
-      )
-      .sort((a, b) => b.timestamp - a.timestamp);
-    const total = todays.reduce((acc, e) => acc + BigInt(e.amount), 0n);
+  const summary = useMemo(() => {
+    const activeFeed = feed ?? [];
+    const todays = activeFeed.filter((e) => e.timestamp >= dayStart);
+
+    const confirmedReceipts = todays.filter(
+      (e): e is FeedItemReceipt =>
+        e.type === "receipt" && e.status === "confirmed",
+    );
+    const overspendReceipts = todays.filter(
+      (e): e is FeedItemReceipt =>
+        e.type === "receipt" && e.status === "overspend",
+    );
+    const blockedToday = todays.filter((e) => e.type === "blocked");
+    const pendingChallenges = activeFeed.filter(
+      (e) =>
+        e.type === "challenge" &&
+        (e.status === "PENDING" || e.status === "FILED"),
+    );
+
+    const spentToday = confirmedReceipts.reduce(
+      (acc, e) => acc + BigInt(e.amount),
+      0n,
+    );
+    const lastReceipt = confirmedReceipts.sort(
+      (a, b) => b.timestamp - a.timestamp,
+    )[0];
+
     return {
-      spentToday: total,
-      lastTx: todays[0] ? BigInt(todays[0].amount) : null,
+      spentToday,
+      lastTx: lastReceipt ? BigInt(lastReceipt.amount) : null,
+      activeToday:
+        confirmedReceipts.length +
+        overspendReceipts.length +
+        blockedToday.length,
+      needsAttention: overspendReceipts.length + pendingChallenges.length,
     };
   }, [dayStart, feed]);
 
@@ -46,66 +104,28 @@ export default function DashboardPage() {
         body="Connect a wallet to read your vault's perimeter, commit an intent, and watch the ledger in real time."
       >
         <div className="flex flex-col gap-14">
-          {/* ── Headline: vault status ── */}
-          <header className="flex flex-col gap-7">
-            <div className="flex items-baseline justify-between gap-4 flex-wrap">
-              <div>
-                <span className="eyebrow block mb-2">Vault status</span>
-                <h1
-                  className="font-display font-semibold tracking-tight text-text-primary leading-[1.05]"
-                  style={{ fontSize: "var(--t-2xl)" }}
-                >
-                  Today&apos;s perimeter.
-                </h1>
-              </div>
-              <div className="text-right">
-                <div className="eyebrow mb-1">Window</div>
-                <div className="font-mono text-[13px] tnum text-text-secondary">
-                  {new Date().toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}{" "}
-                  · 24h rolling
-                </div>
-              </div>
-            </div>
+          <PostureHeader
+            address={address}
+            spentToday={summary.spentToday}
+            activeToday={summary.activeToday}
+            needsAttention={summary.needsAttention}
+            network="Base Sepolia"
+            isReady={progress.isFullyConfigured}
+          />
 
-            <BudgetGauge
-              spentToday={spentToday}
-              maxPerDay={DEMO_MAX_SPEND_PER_DAY}
-              maxPerTx={DEMO_MAX_SPEND_PER_TX}
-              lastTx={lastTx}
-            />
-          </header>
+          <SetupCompletion progress={progress} />
 
-          {/* ── Setup steps ── */}
-          <SetupFlow key={address ?? "disconnected"} />
+          <ExposurePanel
+            spentToday={summary.spentToday}
+            lastTx={summary.lastTx}
+            allowedCount={3}
+          />
 
-          {/* ── Ledger ── */}
+          <QuickActions />
+
           <ActivityFeed />
         </div>
       </WalletGate>
     </Shell>
-  );
-}
-
-function SetupFlow() {
-  const [intentCommitted, setIntentCommitted] = useState(false);
-  const [ownerApproved, setOwnerApproved] = useState(false);
-  const [, setDelegated] = useState(false);
-
-  return (
-    <>
-      <IntentBuilder onCommitted={() => setIntentCommitted(true)} />
-
-      {intentCommitted && (
-        <OwnerSpendApproval onApproved={() => setOwnerApproved(true)} />
-      )}
-
-      {intentCommitted && ownerApproved && (
-        <AgentDelegate onDelegated={() => setDelegated(true)} />
-      )}
-    </>
   );
 }
