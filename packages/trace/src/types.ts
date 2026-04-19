@@ -3,7 +3,12 @@
  *
  * FROZEN after hour 12. Any field change invalidates all prior contextDigests
  * and breaks Dev 1's guard + Dev 3's replay.
+ *
+ * JSON Schema: `packages/trace/schema/decision-trace-v1.schema.json`
  */
+
+/** Frozen schema version — bump only with team agreement (specs-dev2). */
+export const DECISION_TRACE_SCHEMA_VERSION = "1.0.0" as const;
 
 export interface SessionInfo {
   readonly id: string;
@@ -40,7 +45,7 @@ export interface ProposedAction {
 }
 
 export interface DecisionTrace {
-  readonly schemaVersion: "1.0.0";
+  readonly schemaVersion: typeof DECISION_TRACE_SCHEMA_VERSION;
   readonly agentId: string;
   readonly owner: string;
   readonly intentHash: string;

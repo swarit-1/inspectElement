@@ -6,7 +6,6 @@ import {
   useReadContract,
   useSendTransaction,
   useWriteContract,
-  skipToken,
 } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { maxUint256, type Hex } from "viem";
@@ -40,14 +39,21 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
   const { writeContractAsync } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
 
+  const allowanceEnabled = Boolean(
+    address && CONTRACT_ADDRESSES.challengeArbiter
+  );
+
   const { data: allowance = 0n } = useReadContract({
     address: CONTRACT_ADDRESSES.usdc,
     abi: erc20Abi,
     functionName: "allowance",
-    args:
-      address && CONTRACT_ADDRESSES.challengeArbiter
-        ? [address, CONTRACT_ADDRESSES.challengeArbiter]
-        : skipToken,
+    args: address
+      ? [address, CONTRACT_ADDRESSES.challengeArbiter]
+      : [
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+        ],
+    query: { enabled: allowanceEnabled },
   });
 
   const canChallenge =

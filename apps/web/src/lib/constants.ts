@@ -18,10 +18,11 @@ export const CONTRACT_ADDRESSES = getDeploymentAddresses();
 export const PLACEHOLDER_ADDRESSES = CONTRACT_ADDRESSES;
 
 // ── Default counterparties for demo ──
+/** First address matches `fixtures/legit.json` / `overspend.json` `expectedTarget` (EIP-55 checksummed). */
 export const DEFAULT_COUNTERPARTIES: Address[] = [
+  "0x0000000000000000000000000000000000000a01",
   "0x1111111111111111111111111111111111111111",
   "0x2222222222222222222222222222222222222222",
-  "0x3333333333333333333333333333333333333333",
 ];
 
 // ── API base URLs ──

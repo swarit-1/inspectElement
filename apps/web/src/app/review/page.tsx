@@ -123,7 +123,7 @@ export default function ReviewPage() {
                 </div>
               </div>
 
-              {(item.status === "FILED" || item.status === "PENDING") && (
+              {item.status === "FILED" && (
                 <div className="flex gap-3">
                   <Button
                     variant="primary"

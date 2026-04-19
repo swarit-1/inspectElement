@@ -1,71 +1,56 @@
-# IntentGuard Demo Runbook
+# IntentGuard — Demo runbook
 
-## Pre-demo setup
+This is the operator checklist for a **fresh browser session** on **Base Sepolia (84532)**. Total target time: under five minutes once infra, contracts, and agents are running.
 
-1. Ensure Base Sepolia RPC is reachable
-2. Start infra services (Dev 3): `cd apps/infra && npm start`
-3. Start agent runtime (Dev 2): `cd apps/runtime && npm start`
-4. Start frontend: `cd apps/web && npm run dev`
-5. Open browser to `http://localhost:3000`
+## 0. Prereqs
 
-## Demo flow (5 minutes)
+- **Contracts:** `deployments/base-sepolia.json` filled by Dev 1 (addresses + constants). Keep **`apps/web/src/config/base-sepolia.json`** in sync with that file (same JSON), or rely on `NEXT_PUBLIC_*` contract overrides in the web app.
+- **Infra (Dev 3):** trace signing + indexer + REST API (default `http://localhost:8787`). Set `NEXT_PUBLIC_INFRA_API_URL` if different.
+- **Demo control (Dev 2):** `npm run demo` from the repo root (default `http://localhost:7402`). Set `NEXT_PUBLIC_RUNTIME_API_URL` if different.
+- **Agent env:** operator key, RPC, trace URL — see `agents/shared.ts` and project `.env` examples.
+- **Web:** `cd apps/web && npm run dev`. Set `NEXT_PUBLIC_USE_MOCKS=false` for live APIs.
 
-### Step 1: Onboard (30s)
-1. Click **Connect Wallet** on the landing page
-2. Approve wallet connection in Privy/MetaMask
-3. You'll be redirected to the dashboard
+## 1. Start services (terminal order)
 
-### Step 2: Commit Intent (45s)
-1. Review the prefilled intent: 10 USDC/tx, 50 USDC/day, 3 counterparties
-2. Click **Sign & Commit Intent**
-3. Approve the transaction in your wallet
-4. Wait for on-chain confirmation — you'll see "Intent committed"
+1. Infra API + indexer (per Dev 3 ops README).
+2. `npm run demo` — demo-control for IF-10.
+3. `cd apps/web && npm run dev` — dashboard.
 
-### Step 3: Delegate Agent (30s)
-1. The agent delegation form appears after intent is committed
-2. Enter the Agent ID (printed by Dev 2's bootstrap script)
-3. Enter the delegate address (agent's signing key)
-4. Click **Approve Delegate** and confirm the transaction
+## 2. Dashboard flow (happy path)
 
-### Step 4: Run Legit Payment (30s)
-1. Navigate to **Demo Panel** (sidebar)
-2. Click **Run** on "Run Legit Payment" (2 USDC to allowlisted merchant)
-3. Wait for result card showing "Executed" with txHash
-4. Switch to **Dashboard** — see the confirmed receipt in the feed
+1. Open the app root URL → **Connect wallet** (injected/MetaMask on Base Sepolia).
+2. **Deploy / Guard** — use the onboarding card until it shows GuardedExecutor **deployed** (or your team’s pre-deployed smart account path).
+3. **Intent** — confirm demo caps (10 / 50 USDC), edit allowlist + expiry if needed → **Sign & Commit** (IF-01 pin + IF-02 `commitIntent`).
+4. **Delegate** — paste `agentId` and delegate address from `npm run bootstrap` / `scripts/reset.ts` output → **Approve Delegate** (`setAgentDelegate`).
+5. **Demo panel** (`/demo`) — run **Legit** → then **Blocked** → then **Overspend** (IF-10). Confirm feed updates (IF-09) and blocked reason where applicable.
+6. **Overspend receipt** — open receipt detail → **File AmountViolation** (IF-07 prep + USDC approve + tx). Optionally pre-approve the bond earlier to save a step live.
+7. Confirm **challenge** row appears and resolves **UPHELD** with payout visible (IF-09 + on-chain).
 
-### Step 5: Run Blocked Attack (30s)
-1. Back on Demo Panel, click **Run** on "Run Blocked Attack"
-2. Result shows: Blocked — COUNTERPARTY NOT ALLOWED
-3. Dashboard feed shows the blocked attempt with red indicator
+## 3. Reviewer stub (`/review`)
 
-### Step 6: Run Overspend Attack (30s)
-1. Click **Run** on "Run Overspend Attack" (15 USDC to allowlisted merchant)
-2. Result shows "Executed" — the payment went through
-3. Dashboard feed shows overspend receipt with warning and "File challenge" button
+- Lists **challenge** rows from the feed for the connected owner.
+- **Uphold / Reject** calls `POST /v1/reviewer/resolve` (non-authoritative for the MVP deterministic slash).
 
-### Step 7: File Challenge (1m)
-1. Click **File challenge** on the overspend receipt in the feed
-2. Receipt detail page opens showing the violation
-3. Click **File AmountViolation**
-4. Approve USDC bond (1 USDC) and the challenge transaction
-5. Challenge status updates to UPHELD
-6. **15 USDC returned** from operator stake to user
+## 4. Reset / reseed
 
-### Step 8: Verify (30s)
-1. Return to Dashboard — challenge resolution appears in feed
-2. Click the BaseScan link to verify on-chain
+- From repo root: `npx tsx scripts/reset.ts` (prints fresh `agentId` / delegate hints and counterparties).
+- From app package: `npx tsx apps/web/scripts/reset.ts` (lighter client-oriented output).
 
-## Troubleshooting
+## 5. Troubleshooting
 
-- **Wallet won't connect**: Ensure MetaMask is on Base Sepolia (chain ID 84532)
-- **Transaction fails**: Check the smart account has testnet ETH for gas
-- **Feed not updating**: Check infra API is running, or set `NEXT_PUBLIC_USE_MOCKS=true`
-- **Demo panel errors**: Check runtime API is running at the configured URL
+| Symptom | Check |
+|--------|--------|
+| Feed empty | Infra indexer running; owner address matches connected wallet; `NEXT_PUBLIC_USE_MOCKS=false`. |
+| Demo buttons hang | Demo-control port (`7402`) matches `NEXT_PUBLIC_RUNTIME_API_URL`. |
+| Challenge prep fails | `deployments` loaded on infra; manifest indexed for intent hash. |
+| `next build` config error | Use `next.config.mjs` (not `.ts`) for this toolchain. |
 
-## Reset
+## 6. Env quick reference
 
-```bash
-cd apps/web && npx tsx scripts/reset.ts
-```
-
-This clears local caches, creates a fresh agent delegate, and reseeds the intent.
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_USE_MOCKS` | `false` for live IF-01/07/09/10 (default in dev is mocks unless set). |
+| `NEXT_PUBLIC_INFRA_API_URL` | Dev 3 API base. |
+| `NEXT_PUBLIC_RUNTIME_API_URL` | Dev 2 demo-control (default `http://localhost:7402`). |
+| `NEXT_PUBLIC_DEFAULT_AGENT_ID` / `NEXT_PUBLIC_DEFAULT_DELEGATE` | Prefill delegation form. |
+| `NEXT_PUBLIC_*_ADDRESS` | Optional overrides for each contract. |

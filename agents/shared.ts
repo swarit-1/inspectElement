@@ -7,8 +7,8 @@
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { keccak256, encodePacked, getAddress, type Hex } from "viem";
-import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
+import { getAddress, type Hex } from "viem";
+import type { PrivateKeyAccount } from "viem/accounts";
 import { baseSepolia, hardhat } from "viem/chains";
 import type { DecisionTrace } from "../packages/trace/src/types.js";
 import {
@@ -17,6 +17,8 @@ import {
   loadDeploymentConfig,
   createGuardClient,
   GuardDecision,
+  loadRuntimeEnv,
+  REASON_CODE_HEX,
 } from "../packages/trace/src/index.js";
 
 function pickChain() {
@@ -36,23 +38,13 @@ export interface AgentEnv {
  * Load common environment for all demo agents.
  */
 export function loadAgentEnv(): AgentEnv {
-  const operatorKey = process.env.OPERATOR_PRIVATE_KEY as Hex | undefined;
-  if (!operatorKey) {
-    throw new Error("OPERATOR_PRIVATE_KEY env var required");
-  }
-
-  const salt = process.env.AGENT_SALT ?? "intentguard-demo-agent-v1";
-  const account = privateKeyToAccount(operatorKey);
-  const agentId = keccak256(
-    encodePacked(["address", "string"], [account.address, salt])
-  );
-
+  const runtime = loadRuntimeEnv();
   return {
-    operatorKey,
-    account,
-    agentId,
-    rpcUrl: process.env.RPC_URL ?? "https://sepolia.base.org",
-    traceServiceUrl: process.env.TRACE_SERVICE_URL ?? "http://localhost:7403",
+    operatorKey: runtime.operatorKey,
+    account: runtime.account,
+    agentId: runtime.agentId,
+    rpcUrl: runtime.rpcUrl,
+    traceServiceUrl: runtime.traceServiceUrl,
   };
 }
 
@@ -79,7 +71,10 @@ export interface ScenarioResult {
   readonly outcome: "success" | "blocked" | "failed";
   readonly txHash?: string;
   readonly receiptId?: string;
+  /** Human-readable reason label from guard (e.g. COUNTERPARTY_NOT_ALLOWED). */
   readonly reasonCode?: string;
+  /** bytes32 hex from preflight when available (for debugging / strict checks). */
+  readonly reasonCodeHex?: string;
   readonly error?: string;
 }
 
@@ -140,6 +135,7 @@ export async function runExecuteFlow(
       scenario,
       outcome: "blocked",
       reasonCode: preflightResult.reasonLabel,
+      reasonCodeHex: preflightResult.reasonCode,
     };
   }
 
@@ -205,9 +201,28 @@ export async function runPreflightOnlyFlow(
     `[blocked] Preflight: decision=${result.decision}, reason=${result.reasonLabel}`
   );
 
+  if (result.decision !== GuardDecision.RED) {
+    return {
+      scenario: "blocked",
+      outcome: "failed",
+      reasonCode: result.reasonLabel,
+      reasonCodeHex: result.reasonCode,
+      error:
+        `Blocked demo expects preflight RED (COUNTERPARTY_NOT_ALLOWED); got decision=${result.decision}. ` +
+        `Check deployments, intent allowlist, and that expectedTarget in fixtures/blocked.json is not allowlisted.`,
+    };
+  }
+
+  if (result.reasonCode.toLowerCase() !== REASON_CODE_HEX.COUNTERPARTY_NOT_ALLOWED.toLowerCase()) {
+    console.warn(
+      `[blocked] Expected reason COUNTERPARTY_NOT_ALLOWED; got ${result.reasonLabel} (${result.reasonCode})`
+    );
+  }
+
   return {
     scenario: "blocked",
     outcome: "blocked",
     reasonCode: result.reasonLabel,
+    reasonCodeHex: result.reasonCode,
   };
 }
