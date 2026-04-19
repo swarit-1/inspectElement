@@ -118,6 +118,22 @@ HTTP server, e.g. `:7402`:
 ### 3.8 JSON fixtures
 One fixture per scenario at `fixtures/{legit,blocked,overspend}.json` with fixed prompts, tool outputs, expected target/amount. Used to make traces reproducible.
 
+### 3.9 Approval-gated judge enhancements
+The items below are feasible, but they cross Dev 1 / Dev 3 / Dev 4 boundaries. Do not implement them without explicit approval because they either change the runtime's live execution behavior or require new interface commitments.
+
+1. Hard-mode Gemini screener
+   Consume Dev 3's optional `POST /v1/screen` and, if `injectionScore > threshold`, abort before calling `executeWithGuard`.
+   Advisory mode is preferred by default. Hard mode should report a clear local outcome such as `blocked` + `INJECTION_DETECTED` via `/demo/status`.
+   Requires: team agreement on threshold, Dev 3 screener availability, and Dev 4 UI support.
+2. Depeg scenario support
+   If Dev 1 adds a depeg guard or `MockPriceFeed`, expose a fourth scripted scenario such as `/demo/run-depeg` or reuse `/demo/run-legit` against the toggled feed state.
+   Runtime should treat the depeg block exactly like other deterministic preflight failures and surface the live reason code.
+   Requires: protocol approval from Dev 1 because it changes guard reason codes and deployment artifacts.
+3. Risk-overlay enrichment
+   Runtime may consume off-chain risk metadata such as counterparty risk score, blacklist hints, or behavioral anomaly flags and expose them through `/demo/status` for the dashboard.
+   This is display-only unless the team explicitly approves using it to alter execution decisions.
+   Requires: Dev 3 read-model support and Dev 4 rendering support. Do not mutate `DecisionTrace v1` to add this late.
+
 ---
 
 ## 4. Interface contracts

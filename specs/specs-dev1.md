@@ -243,7 +243,22 @@ Write ABIs to `abi/*.json` (one file per contract). **Commit these to repo root.
 
 ---
 
-## 9. Do NOT do
+## 9. Approval-gated protocol add-ons
+
+Only take the items below after explicit team approval. Each one changes frozen reason codes, ABI expectations, deployment artifacts, or the live demo narrative.
+
+1. Stablecoin depeg circuit breaker
+   Add a price-feed-backed hard check in `GuardedExecutor` that rejects with `STABLECOIN_DEPEGGED` when USDC/USD falls below the agreed threshold.
+   Preferred demo path: deploy a small `MockPriceFeed` so the team can flip the condition on stage without relying on a real depeg.
+   Required follow-through: new reason code, new tests, ABI refresh, deployment artifact refresh, and UI reason-label support.
+2. Global counterparty blacklist registry
+   Add an optional on-chain `BlacklistRegistry` consulted by `preflightCheck` and `executeWithGuard`.
+   Reject with `COUNTERPARTY_BLACKLISTED`, but document and freeze the check order once chosen so downstream consumers know which reason wins.
+   Required follow-through: new contract surface, new reason code, indexer/UI support, and coordination with Dev 3 on how blacklist entries are seeded and displayed.
+
+---
+
+## 10. Do NOT do
 
 - Do NOT implement `YELLOW` flow. Enum value only.
 - Do NOT add `CounterpartyViolation` challenge type.

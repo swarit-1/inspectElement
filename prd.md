@@ -947,3 +947,22 @@ Any prize-track extension must preserve these rules:
 For judging, the canonical story should be:
 
 > IntentGuard is security and recourse infrastructure for agentic stablecoin payments. It lets developers deploy AI payment agents with bounded permissions, cryptographic audit trails, and deterministic user recovery when an allowed agent action still exceeds the user-approved spend policy.
+
+## 9.6 Recommended judge-facing add-ons
+
+These are the highest-leverage add-ons for judging because they sharpen the existing security-and-recourse narrative instead of creating a second product.
+
+| Priority | Add-on | Primary owner(s) | Implementation note | Why it helps |
+| -------- | ------ | ---------------- | ------------------- | ------------ |
+| 1 | Gemini pre-execution screener | Verifier & Infra + Full-Stack | Add `POST /v1/screen` that scores stored `DecisionTrace v1` prompts/tool I/O and returns `{ injectionScore, signals, explanation }`. Default to advisory in the UI. Runtime hard-abort mode remains optional and approval-gated. | Turns the blocked attack from "rule matched" into "the system understood the injection." Strongest `Security in AI` + `Gemini` story. |
+| 2 | Trace diff viewer | Full-Stack | Use `GET /v1/replay/:contextDigest` to render "what the agent saw vs what it attempted to pay" with prompt/tool/action context. Do not change `DecisionTrace v1`. | Best visual artifact in the demo. Judges can see the exploit instead of only hearing about it. |
+| 3 | Gemini incident summarizer | Verifier & Infra + Full-Stack | Extend `/review` and receipt detail with a 2–3 bullet Gemini summary from `{ trace, receipt, challenge }`. Must remain advisory only and never change on-chain outcomes. | Strengthens the `Best Use of Gemini API` pitch while reinforcing the determinism boundary. |
+| 4 | Live feed notifications | Verifier & Infra + Full-Stack | Add SSE or another lightweight push path for new receipts/challenges. Keep the read-model schema unchanged; this is transport polish, not a new feed type. | Removes demo dead air and makes the dashboard feel like a live monitoring product. |
+| 5 | One-click challenge-bond pre-approval | Full-Stack | Pre-approve the 1 USDC challenge bond during onboarding or immediately after intent commit. Keep the current challenge calldata flow unchanged. | Cuts one fragile wallet interaction from the most important recourse moment in the demo. |
+
+The items below are feasible, but they should remain approval-gated because they change frozen reason codes, deployment artifacts, or the live execution story:
+
+* stablecoin depeg circuit breaker in `GuardedExecutor`;
+* global counterparty blacklist registry;
+* hard-mode Gemini abort before `executeWithGuard`;
+* anomaly or risk scoring that changes operator decisions instead of just enriching the UI.
