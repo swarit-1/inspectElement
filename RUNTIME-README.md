@@ -11,6 +11,10 @@ The runtime layer between the LLM loop and the wallet. Handles:
 - Three demo agents: legit, blocked, overspend
 - Demo control API (IF-10) consumed by Dev 4's dashboard
 
+The demo flow assumes a real owner/delegate split:
+- `OWNER_PRIVATE_KEY` is the end-user account whose intent and USDC allowance are enforced on-chain.
+- `OPERATOR_PRIVATE_KEY` is the delegate/operator account that registers the agent, stakes, and submits guarded executions.
+
 ## Quick Start
 
 ```bash
@@ -19,7 +23,7 @@ npm install
 
 # Copy environment variables
 cp .env.example .env
-# Edit .env with your operator private key
+# Edit .env with your operator and owner private keys
 
 # Run tests (trace serialization determinism)
 npm test
@@ -27,7 +31,7 @@ npm test
 # Start the local trace stub (if Dev 3's service isn't ready)
 TRACE_STUB_SIGNER_KEY=0x... npx tsx packages/trace/src/trace-stub-server.ts
 
-# Bootstrap the agent (register + stake 50 USDC)
+# Bootstrap the demo runtime (register + stake + commit intent + delegate/USDC approvals)
 npm run bootstrap
 
 # Start the demo control API (for Dev 4)
@@ -42,6 +46,7 @@ npm run mock-x402
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `OPERATOR_PRIVATE_KEY` | Yes | — | Operator EOA private key (0x-prefixed hex) |
+| `OWNER_PRIVATE_KEY` | Yes* | — | Demo owner private key. Required for shared/testnet flows; defaults to a local Hardhat account only on `CHAIN_ID=31337`. |
 | `RPC_URL` | No | `https://sepolia.base.org` | Canonical runtime RPC endpoint |
 | `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | Backward-compatible alias; runtime falls back to this if `RPC_URL` is unset |
 | `TRACE_SERVICE_URL` | No | `http://localhost:7403` | Dev 3's trace service or local stub |
@@ -80,7 +85,7 @@ fixtures/
   overspend.json   — Reproducible trace for overspend scenario
 
 scripts/
-  bootstrap-agent.ts — Register agent + stake 50 USDC
+  bootstrap-agent.ts — Register agent, top up stake, commit owner intent, approve delegate + owner USDC
 ```
 
 ## Demo Control API (IF-10)
@@ -90,9 +95,11 @@ scripts/
 | POST | `/demo/run-legit` | `{}` | `{ status: "running", scenarioId }` |
 | POST | `/demo/run-blocked` | `{}` | `{ status: "running", scenarioId }` |
 | POST | `/demo/run-overspend` | `{}` | `{ status: "running", scenarioId }` |
-| GET | `/demo/status` | — | `{ last: { scenarioId, outcome, txHash?, reasonCode?, error? } }` |
+| GET | `/demo/status` | — | `{ last: { scenarioId, outcome, txHash?, reasonCode?, receiptId?, error? } }` |
 
 `outcome ∈ { "success", "blocked", "failed" }`
+
+Implementation note: `/demo/status` also includes additive `status` and `reasonCodeHex` fields for dashboard convenience. The spec-required fields remain stable.
 
 ## Dependencies on Other Devs
 
@@ -110,7 +117,7 @@ scripts/
 - UTF-8, no BOM
 - Keys alphabetically sorted at every depth
 - No whitespace outside string values
-- Integers for amounts/timestamps (amounts as JSON strings for uint256)
+- Runtime rejects non-integer numeric values during canonical serialization
 - Missing optional fields → explicit `null`
 - Arrays preserve insertion order
 - Line endings preserved in string values

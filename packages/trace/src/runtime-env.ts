@@ -18,10 +18,14 @@ export const DEFAULT_MERCHANT_ADDRESS =
   "0x0000000000000000000000000000000000000a01";
 export const DEFAULT_DEMO_PORT = 7402;
 export const DEFAULT_MOCK_X402_PORT = 7404;
+export const DEFAULT_DEMO_OWNER_KEY =
+  "0x59c6995e998f97a5a0044966f0945382d7d6d3f6aa3dbe8b6f2a68d4d5f7d9e7";
 
 export interface RuntimeEnv {
   readonly operatorKey: Hex;
+  readonly ownerKey: Hex;
   readonly account: PrivateKeyAccount;
+  readonly ownerAccount: PrivateKeyAccount;
   readonly agentSalt: string;
   readonly agentId: Hex;
   readonly rpcUrl: string;
@@ -97,13 +101,24 @@ export function loadRuntimeEnv(
   if (!operatorKey) {
     throw new Error("OPERATOR_PRIVATE_KEY env var required");
   }
+  const ownerKey =
+    (env.OWNER_PRIVATE_KEY as Hex | undefined) ??
+    (env.CHAIN_ID === "31337" ? DEFAULT_DEMO_OWNER_KEY : undefined);
+  if (!ownerKey) {
+    throw new Error(
+      "OWNER_PRIVATE_KEY env var required (or omit only on CHAIN_ID=31337)"
+    );
+  }
 
   const account = privateKeyToAccount(operatorKey);
+  const ownerAccount = privateKeyToAccount(ownerKey);
   const agentSalt = resolveAgentSalt(env);
 
   return {
     operatorKey,
+    ownerKey,
     account,
+    ownerAccount,
     agentSalt,
     agentId: deriveAgentId(account.address, agentSalt),
     rpcUrl: resolveRuntimeRpcUrl(env),

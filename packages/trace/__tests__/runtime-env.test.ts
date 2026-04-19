@@ -9,6 +9,8 @@ import {
 
 const TEST_OPERATOR_KEY =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const TEST_OWNER_KEY =
+  "0x59c6995e998f97a5a0044966f0945382d7d6d3f6aa3dbe8b6f2a68d4d5f7d9e7";
 
 describe("runtime env", () => {
   it("prefers RPC_URL over BASE_SEPOLIA_RPC_URL", () => {
@@ -35,6 +37,7 @@ describe("runtime env", () => {
   it("derives a stable agentId from operator address and salt", () => {
     const runtime = loadRuntimeEnv({
       OPERATOR_PRIVATE_KEY: TEST_OPERATOR_KEY,
+      OWNER_PRIVATE_KEY: TEST_OWNER_KEY,
       AGENT_SALT: "intentguard-demo-agent-v1",
     });
 
@@ -46,8 +49,18 @@ describe("runtime env", () => {
   it("uses the default metadata URI when unset", () => {
     const runtime = loadRuntimeEnv({
       OPERATOR_PRIVATE_KEY: TEST_OPERATOR_KEY,
+      OWNER_PRIVATE_KEY: TEST_OWNER_KEY,
     });
 
     expect(runtime.agentMetadataUri).toBe(DEFAULT_AGENT_METADATA_URI);
+  });
+
+  it("falls back to the local demo owner on hardhat when OWNER_PRIVATE_KEY is unset", () => {
+    const runtime = loadRuntimeEnv({
+      OPERATOR_PRIVATE_KEY: TEST_OPERATOR_KEY,
+      CHAIN_ID: "31337",
+    });
+
+    expect(runtime.ownerAccount.address).not.toBe(runtime.account.address);
   });
 });

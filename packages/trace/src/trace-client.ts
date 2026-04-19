@@ -9,6 +9,7 @@ import type { DecisionTrace, TraceAck } from "./types.js";
 import { serializeCanonical } from "./serialize.js";
 import { computeContextDigest } from "./digest.js";
 import type { Hex } from "viem";
+import { validateDecisionTrace } from "./validation.js";
 
 export interface TraceUploadResponse {
   readonly traceURI: string;
@@ -54,6 +55,7 @@ export async function uploadTrace(
   trace: DecisionTrace,
   serviceUrl: string
 ): Promise<TraceUploadResponse> {
+  validateDecisionTrace(trace);
   const localDigest = computeContextDigest(trace);
   const canonicalJson = serializeCanonical(trace);
 

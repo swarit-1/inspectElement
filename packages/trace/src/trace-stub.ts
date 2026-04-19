@@ -7,15 +7,31 @@
 
 import express from "express";
 import {
-  encodeAbiParameters,
+  getAddress,
   keccak256,
   stringToBytes,
+  type Address,
   type Hex,
   type PrivateKeyAccount,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { loadDeploymentConfig } from "./config.js";
 
 const TRACE_ACK_VALIDITY_SECONDS = 3600; // 1 hour
+const TRACE_ACK_DOMAIN_NAME = "IntentGuard";
+const TRACE_ACK_DOMAIN_VERSION = "1";
+
+const TRACE_ACK_TYPES = {
+  TraceAck: [
+    { name: "contextDigest", type: "bytes32" },
+    { name: "uriHash", type: "bytes32" },
+    { name: "expiresAt", type: "uint64" },
+    { name: "guardedExecutor", type: "address" },
+    { name: "chainId", type: "uint256" },
+    { name: "agentId", type: "bytes32" },
+    { name: "owner", type: "address" },
+  ],
+} as const;
 
 interface TraceRequest {
   agentId: string;
@@ -46,6 +62,7 @@ export function createTraceStubServer(signerPrivateKey: Hex) {
   app.post("/v1/traces", async (req, res) => {
     try {
       const body = req.body as TraceRequest;
+      const deployment = loadDeploymentConfig();
 
       if (!body.agentId || !body.owner || !body.contextDigest || !body.trace) {
         res.status(400).json({ error: "Missing required fields" });
@@ -57,21 +74,25 @@ export function createTraceStubServer(signerPrivateKey: Hex) {
       const uriHash = keccak256(stringToBytes(traceURI));
       const expiresAt = Math.floor(Date.now() / 1000) + TRACE_ACK_VALIDITY_SECONDS;
 
-      // Must match services/infra Signer.traceAckDigest + EIP-191 personal_sign
-      // (keccak256(abi.encode(bytes32,bytes32,uint64)), not encodePacked).
-      const digest = keccak256(
-        encodeAbiParameters(
-          [
-            { name: "contextDigest", type: "bytes32" },
-            { name: "uriHash", type: "bytes32" },
-            { name: "expiresAt", type: "uint64" },
-          ],
-          [body.contextDigest, uriHash, BigInt(expiresAt)],
-        ),
-      );
-
-      const signature = await signer.signMessage({
-        message: { raw: digest },
+      // Mirror GuardedExecutor's EIP-712 TraceAck digest exactly.
+      const signature = await signer.signTypedData({
+        domain: {
+          name: TRACE_ACK_DOMAIN_NAME,
+          version: TRACE_ACK_DOMAIN_VERSION,
+          chainId: deployment.chainId,
+          verifyingContract: deployment.contracts.GuardedExecutor,
+        },
+        types: TRACE_ACK_TYPES,
+        primaryType: "TraceAck",
+        message: {
+          contextDigest: body.contextDigest,
+          uriHash,
+          expiresAt: BigInt(expiresAt),
+          guardedExecutor: deployment.contracts.GuardedExecutor,
+          chainId: BigInt(deployment.chainId),
+          agentId: body.agentId as Hex,
+          owner: getAddress(body.owner) as Address,
+        },
       });
 
       const traceStored =
@@ -91,6 +112,9 @@ export function createTraceStubServer(signerPrivateKey: Hex) {
         uriHash,
         expiresAt,
         signature,
+        signer: signer.address,
+        guardedExecutor: deployment.contracts.GuardedExecutor,
+        chainId: deployment.chainId,
       });
     } catch (err) {
       console.error("[trace-stub] Error:", err);

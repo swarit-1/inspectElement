@@ -7,7 +7,12 @@
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { getAddress, type Hex } from "viem";
+import {
+  createPublicClient,
+  getAddress,
+  http,
+  type Hex,
+} from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
 import { baseSepolia, hardhat } from "viem/chains";
 import type { DecisionTrace } from "../packages/trace/src/types.js";
@@ -21,6 +26,7 @@ import {
   GuardDecision,
   loadRuntimeEnv,
   REASON_CODE_HEX,
+  IntentRegistryABI,
 } from "../packages/trace/src/index.js";
 import type { BuildExecutionRequestInput } from "../packages/trace/src/index.js";
 
@@ -32,6 +38,8 @@ function pickChain() {
 export interface AgentEnv {
   readonly operatorKey: Hex;
   readonly account: PrivateKeyAccount;
+  readonly ownerAccount: PrivateKeyAccount;
+  readonly ownerAddress: Hex;
   readonly agentId: Hex;
   readonly rpcUrl: string;
   readonly traceServiceUrl: string;
@@ -45,6 +53,8 @@ export function loadAgentEnv(): AgentEnv {
   return {
     operatorKey: runtime.operatorKey,
     account: runtime.account,
+    ownerAccount: runtime.ownerAccount,
+    ownerAddress: runtime.ownerAccount.address,
     agentId: runtime.agentId,
     rpcUrl: runtime.rpcUrl,
     traceServiceUrl: runtime.traceServiceUrl,
@@ -86,19 +96,21 @@ interface PreparedScenario {
   readonly requestInput: Omit<BuildExecutionRequestInput, "traceURI" | "traceAck">;
 }
 
-function prepareScenarioExecution(
+async function prepareScenarioExecution(
   scenario: "legit" | "blocked" | "overspend",
   env: AgentEnv
-): PreparedScenario {
+): Promise<PreparedScenario> {
   const config = loadDeploymentConfig();
   const { trace, expectedTarget, expectedAmount } = loadFixture(scenario);
   const normalizedTarget = getAddress(expectedTarget.toLowerCase());
   const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
-  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
+  const normalizedOwner = getAddress(env.ownerAddress.toLowerCase());
+  const intentHash = await readActiveIntentHash(env, config.contracts.IntentRegistry);
 
   const liveTrace = prepareLiveTrace(trace, {
     owner: normalizedOwner,
     agentId: env.agentId,
+    intentHash,
     target: normalizedTarget,
     token: normalizedToken,
     amount: expectedAmount,
@@ -124,7 +136,7 @@ export async function runExecuteFlow(
   scenario: "legit" | "overspend",
   env: AgentEnv
 ): Promise<ScenarioResult> {
-  const prepared = prepareScenarioExecution(scenario, env);
+  const prepared = await prepareScenarioExecution(scenario, env);
 
   console.log(`[${scenario}] Uploading trace...`);
   const traceResponse = await uploadTrace(prepared.liveTrace, env.traceServiceUrl);
@@ -172,7 +184,7 @@ export async function runExecuteFlow(
 export async function runPreflightOnlyFlow(
   env: AgentEnv
 ): Promise<ScenarioResult> {
-  const prepared = prepareScenarioExecution("blocked", env);
+  const prepared = await prepareScenarioExecution("blocked", env);
 
   console.log("[blocked] Uploading trace...");
   const traceResponse = await uploadTrace(prepared.liveTrace, env.traceServiceUrl);
@@ -215,4 +227,29 @@ export async function runPreflightOnlyFlow(
     reasonCode: result.reasonLabel,
     reasonCodeHex: result.reasonCode,
   };
+}
+
+async function readActiveIntentHash(
+  env: AgentEnv,
+  intentRegistry: Hex
+): Promise<Hex> {
+  const client = createPublicClient({
+    chain: pickChain(),
+    transport: http(env.rpcUrl),
+  });
+
+  const intentHash = (await client.readContract({
+    address: intentRegistry,
+    abi: IntentRegistryABI,
+    functionName: "getActiveIntentHash",
+    args: [env.ownerAddress],
+  })) as Hex;
+
+  if (/^0x0{64}$/.test(intentHash)) {
+    throw new Error(
+      `No active intent found for demo owner ${env.ownerAddress}. Run npm run bootstrap first.`
+    );
+  }
+
+  return intentHash;
 }
