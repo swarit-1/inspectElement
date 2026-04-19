@@ -39,6 +39,10 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
   const { writeContractAsync } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
 
+  const allowanceEnabled = Boolean(
+    address && CONTRACT_ADDRESSES.challengeArbiter
+  );
+
   const { data: allowance = 0n } = useReadContract({
     address: CONTRACT_ADDRESSES.usdc,
     abi: erc20Abi,

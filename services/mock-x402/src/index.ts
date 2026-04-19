@@ -7,9 +7,13 @@
  */
 
 import express from "express";
-import { loadDeploymentConfig } from "../../../packages/trace/src/index.js";
+import {
+  loadDeploymentConfig,
+  resolveMerchantAddress,
+  resolveMockX402Port,
+} from "../../../packages/trace/src/index.js";
 
-const PORT = Number(process.env.MOCK_X402_PORT ?? 7404);
+const PORT = resolveMockX402Port();
 
 function main() {
   const app = express();
@@ -18,9 +22,7 @@ function main() {
   const config = loadDeploymentConfig();
 
   // The merchant's receiving address — should be in the user's allowlist
-  const merchantAddress =
-    (process.env.MERCHANT_ADDRESS as `0x${string}`) ??
-    "0x0000000000000000000000000000000000000A01";
+  const merchantAddress = resolveMerchantAddress();
 
   /**
    * Any request to /api/* returns 402 with payment details

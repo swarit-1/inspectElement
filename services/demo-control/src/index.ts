@@ -18,8 +18,9 @@ import {
   runPreflightOnlyFlow,
   type ScenarioResult,
 } from "../../../agents/shared.js";
+import { resolveDemoPort } from "../../../packages/trace/src/index.js";
 
-const PORT = Number(process.env.DEMO_PORT ?? 7402);
+const PORT = resolveDemoPort();
 
 interface DemoState {
   scenarioId: string;
@@ -160,6 +161,7 @@ function main() {
         outcome: lastRun.result?.outcome ?? null,
         txHash: lastRun.result?.txHash ?? null,
         reasonCode: lastRun.result?.reasonCode ?? null,
+        reasonCodeHex: lastRun.result?.reasonCodeHex ?? null,
         receiptId: lastRun.result?.receiptId ?? null,
         error: lastRun.result?.error ?? null,
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useConnectors, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { Button } from "@/components/ui/button";
 import { truncateAddress } from "@/lib/constants";
@@ -13,15 +13,26 @@ interface WalletConnectProps {
 
 export function WalletConnect({ step, onStepChange }: WalletConnectProps) {
   const { address, isConnected } = useAccount();
-  const { connect, isPending: isConnecting } = useConnect();
+  const connectors = useConnectors();
+  const { connect, isPending: isConnecting, error: connectError, reset } =
+    useConnect();
   const { disconnect } = useDisconnect();
 
   function handleConnect() {
+    reset();
+    const connector =
+      connectors.find((c) => c.id === "injected" || c.type === "injected") ??
+      connectors[0] ??
+      injected();
     connect(
-      { connector: injected() },
+      { connector },
       { onSuccess: () => onStepChange("deployed") }
     );
   }
+
+  const connectErrorMessage = connectError
+    ? formatWalletError(connectError)
+    : null;
 
   if (isConnected && address) {
     return (
@@ -80,16 +91,48 @@ export function WalletConnect({ step, onStepChange }: WalletConnectProps) {
       </ul>
 
       {/* Action bar */}
-      <div className="flex items-center gap-5 hairline-top pt-6">
-        <Button size="lg" onClick={handleConnect} loading={isConnecting}>
-          Connect wallet →
-        </Button>
-        <span className="font-mono text-[11px] tnum text-text-tertiary">
-          Base Sepolia · injected wallet
-        </span>
+      <div className="flex flex-col gap-3 hairline-top pt-6">
+        <div className="flex flex-wrap items-center gap-5">
+          <Button
+            size="lg"
+            onClick={handleConnect}
+            loading={isConnecting}
+            disabled={isConnecting}
+          >
+            Connect wallet →
+          </Button>
+          <span className="font-mono text-[11px] tnum text-text-tertiary">
+            Base Sepolia · injected wallet
+          </span>
+        </div>
+        {connectErrorMessage && (
+          <p
+            role="alert"
+            aria-live="polite"
+            className="text-[13px] text-danger leading-relaxed max-w-[52ch]"
+          >
+            {connectErrorMessage}
+          </p>
+        )}
       </div>
     </div>
   );
+}
+
+function formatWalletError(err: Error): string {
+  const msg = (err as { shortMessage?: string }).shortMessage ?? err.message ?? "";
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("user rejected") ||
+    lower.includes("user denied") ||
+    err.name === "UserRejectedRequestError"
+  ) {
+    return "Connection was cancelled in your wallet.";
+  }
+  if (lower.includes("chain") && lower.includes("mismatch")) {
+    return "Wrong network — switch to Base Sepolia in your wallet and try again.";
+  }
+  return msg || "Could not connect wallet. Try again.";
 }
 
 function Pillar({ seq, name, desc }: { seq: string; name: string; desc: string }) {

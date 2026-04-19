@@ -1,5 +1,7 @@
 # IntentGuard Agent Runtime (Dev 2)
 
+**Canonical spec:** [`specs/specs-dev2.md`](specs/specs-dev2.md) — scope, interfaces (IF-03/04/05/10), milestones, and shared artifacts for this workstream.
+
 ## Overview
 
 The runtime layer between the LLM loop and the wallet. Handles:
@@ -40,10 +42,12 @@ npm run mock-x402
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `OPERATOR_PRIVATE_KEY` | Yes | — | Operator EOA private key (0x-prefixed hex) |
-| `RPC_URL` | No | `https://sepolia.base.org` | Base Sepolia RPC endpoint |
+| `RPC_URL` | No | `https://sepolia.base.org` | Canonical runtime RPC endpoint |
+| `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | Backward-compatible alias; runtime falls back to this if `RPC_URL` is unset |
 | `TRACE_SERVICE_URL` | No | `http://localhost:7403` | Dev 3's trace service or local stub |
 | `TRACE_STUB_SIGNER_KEY` | No | hardhat #0 | Private key for local trace stub signer |
 | `AGENT_SALT` | No | `intentguard-demo-agent-v1` | Salt for deriving agentId |
+| `AGENT_METADATA_URI` | No | `ipfs://stub/agent-metadata` | Metadata URI used by `npm run bootstrap` |
 | `DEMO_PORT` | No | `7402` | Demo control API port |
 | `MOCK_X402_PORT` | No | `7404` | Mock x402 merchant port |
 
