@@ -243,18 +243,25 @@ Write ABIs to `abi/*.json` (one file per contract). **Commit these to repo root.
 
 ---
 
-## 9. Approval-gated protocol add-ons
+## 9. Judge-facing best bets
 
-Only take the items below after explicit team approval. Each one changes frozen reason codes, ABI expectations, deployment artifacts, or the live demo narrative.
+These are the best recommendations to prioritize for hackathon judges. They do not all land inside Dev 1's codebase, but they are the coordinated priority set that should shape protocol choices, sequencing, and integration decisions.
 
-1. Stablecoin depeg circuit breaker
-   Add a price-feed-backed hard check in `GuardedExecutor` that rejects with `STABLECOIN_DEPEGGED` when USDC/USD falls below the agreed threshold.
-   Preferred demo path: deploy a small `MockPriceFeed` so the team can flip the condition on stage without relying on a real depeg.
-   Required follow-through: new reason code, new tests, ABI refresh, deployment artifact refresh, and UI reason-label support.
-2. Global counterparty blacklist registry
-   Add an optional on-chain `BlacklistRegistry` consulted by `preflightCheck` and `executeWithGuard`.
-   Reject with `COUNTERPARTY_BLACKLISTED`, but document and freeze the check order once chosen so downstream consumers know which reason wins.
-   Required follow-through: new contract surface, new reason code, indexer/UI support, and coordination with Dev 3 on how blacklist entries are seeded and displayed.
+1. Gemini pre-exec screener
+   Safest version is advisory first: Dev 3 adds `POST /v1/screen`, scores the existing `DecisionTrace` prompts/tool calls/observations, and Dev 4 surfaces `injectionScore`, `signals`, and `explanation` in the feed or receipt detail.
+   Dev 1 implication: keep protocol interfaces stable and do not move AI output onto the deterministic on-chain path.
+2. Trace diff viewer
+   Dev 4 can build this from `GET /v1/replay/:contextDigest` without changing the trace schema.
+   Dev 1 implication: preserve `contextDigest`, receipt, and trace URI surfaces because this is one of the clearest visual artifacts in the demo.
+3. Gemini incident summarizer
+   Fits naturally on `/review`, receipt detail, and challenge detail pages as an advisory explanation layer.
+   Dev 1 implication: keep reviewer and challenge data legible and stable for downstream summarization; do not let Gemini affect `AmountViolation` outcomes.
+4. Live notifications
+   Add SSE or a lightweight server-side event emitter so new receipts and challenges show up immediately in the dashboard.
+   Dev 1 implication: event surfaces and indexing inputs must remain consistent and easy to consume.
+5. One-click pre-approve bond
+   Pre-approve the challenge bond during onboarding or immediately after intent commit.
+   Dev 1 implication: keep challenge-bond and approval flows simple and stable because reducing demo friction here has outsized payoff.
 
 ---
 

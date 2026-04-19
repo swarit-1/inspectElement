@@ -119,7 +119,7 @@ HTTP server, e.g. `:7402`:
 One fixture per scenario at `fixtures/{legit,blocked,overspend}.json` with fixed prompts, tool outputs, expected target/amount. Used to make traces reproducible.
 
 ### 3.9 Approval-gated judge enhancements
-The items below are feasible, but they cross Dev 1 / Dev 3 / Dev 4 boundaries. Do not implement them without explicit approval because they either change the runtime's live execution behavior or require new interface commitments.
+The items below are feasible, but they cross Dev 1 / Dev 3 / Dev 4 boundaries. Do not implement them without explicit approval because they either change the runtime's live execution behavior, require new interface commitments, or alter the judged product story.
 
 1. Hard-mode Gemini screener
    Consume Dev 3's optional `POST /v1/screen` and, if `injectionScore > threshold`, abort before calling `executeWithGuard`.
@@ -129,10 +129,18 @@ The items below are feasible, but they cross Dev 1 / Dev 3 / Dev 4 boundaries. D
    If Dev 1 adds a depeg guard or `MockPriceFeed`, expose a fourth scripted scenario such as `/demo/run-depeg` or reuse `/demo/run-legit` against the toggled feed state.
    Runtime should treat the depeg block exactly like other deterministic preflight failures and surface the live reason code.
    Requires: protocol approval from Dev 1 because it changes guard reason codes and deployment artifacts.
-3. Risk-overlay enrichment
-   Runtime may consume off-chain risk metadata such as counterparty risk score, blacklist hints, or behavioral anomaly flags and expose them through `/demo/status` for the dashboard.
+3. Counterparty risk score and blacklist overlay
+   Split this into two parts. An off-chain trust score is feasible and useful: runtime may consume counterparty risk metadata and expose it through `/demo/status` for the dashboard.
+   A true on-chain `BlacklistRegistry` is a larger protocol change and remains approval-gated because the current PRD treats blacklist registries as a non-goal for MVP.
+   Requires: Dev 3 read-model support, Dev 4 rendering support, and Dev 1 approval if any risk signal changes execution behavior.
+4. Velocity anomaly detection
+   Runtime may consume anomaly metadata such as per-agent rolling spend baselines, z-scores, or unusual-frequency flags and surface it via `/demo/status`.
    This is display-only unless the team explicitly approves using it to alter execution decisions.
-   Requires: Dev 3 read-model support and Dev 4 rendering support. Do not mutate `DecisionTrace v1` to add this late.
+   Requires: Dev 3 to seed enough historical receipts for the score to feel credible in demo conditions; do not mutate `DecisionTrace v1` to add this late.
+5. Mongo prize overlay
+   Do not attempt a full store migration inside Dev 2. The feasible version is to consume data from a Dev 3 dual-write path where traces, receipts, challenges, or summaries are also written to Mongo Atlas.
+   Best use is a visible feature reading from that Mongo-backed path, such as anomaly scoring, Gemini summaries, or a judge-facing evidence explorer.
+   Requires: Dev 3 approval because it changes infra persistence strategy and read-model ownership.
 
 ---
 
