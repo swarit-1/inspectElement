@@ -55,6 +55,13 @@ export interface ChallengePrep {
   chainId: number;
 }
 
+export interface DemoRuntimeConfig {
+  agentId: Hex;
+  operatorAddress: Address;
+  ownerAddress: Address;
+  signerProvider: "cdp" | "local";
+}
+
 // ── Feed types ──
 
 export type FeedItemType = "receipt" | "blocked" | "challenge" | "intent";

@@ -34,7 +34,7 @@ export const RUNTIME_API_BASE =
 
 // ── Feature flags ──
 export const USE_MOCKS =
-  process.env.NEXT_PUBLIC_USE_MOCKS !== "false"; // default true
+  process.env.NEXT_PUBLIC_USE_MOCKS === "true"; // default false
 
 // ── Display helpers ──
 export const USDC_DECIMALS = 6;

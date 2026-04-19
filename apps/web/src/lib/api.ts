@@ -1,6 +1,7 @@
 import { INFRA_API_BASE, RUNTIME_API_BASE, USE_MOCKS, DEMO_CHALLENGE_BOND } from "./constants";
 import type {
   ManifestResponse,
+  DemoRuntimeConfig,
   FeedItem,
   FeedItemIntent,
   FeedItemReceipt,
@@ -200,15 +201,39 @@ export async function postReviewerResolve(body: {
 
 // ── Runtime API (Dev 2) — demo-control ──
 
-export async function runDemoScenario(scenario: DemoScenario): Promise<string> {
+export async function getDemoRuntimeConfig(): Promise<DemoRuntimeConfig | null> {
+  if (USE_MOCKS) {
+    return null;
+  }
+
+  const res = await fetchWithHelpfulErrors(
+    `${RUNTIME_API_BASE}/demo/config`,
+    undefined,
+    "runtime"
+  );
+  if (!res.ok) throw new Error(`Demo config failed: ${res.status}`);
+  return res.json();
+}
+
+export async function runDemoScenario(
+  scenario: DemoScenario,
+  ownerAddress?: Address
+): Promise<string> {
   if (USE_MOCKS) {
     await delay(300);
     return `mock-${scenario}-${Date.now()}`;
   }
 
-  const res = await fetchWithHelpfulErrors(`${RUNTIME_API_BASE}/demo/run-${scenario}`, {
-    method: "POST",
-  }, "runtime");
+  const payload = ownerAddress ? JSON.stringify({ ownerAddress }) : undefined;
+  const res = await fetchWithHelpfulErrors(
+    `${RUNTIME_API_BASE}/demo/run-${scenario}`,
+    {
+      method: "POST",
+      headers: payload ? { "Content-Type": "application/json" } : undefined,
+      body: payload,
+    },
+    "runtime"
+  );
   if (!res.ok) throw new Error(`Demo run failed: ${res.status}`);
   const body = (await res.json()) as { scenarioId?: string };
   if (!body.scenarioId) throw new Error("Demo run did not return scenarioId");

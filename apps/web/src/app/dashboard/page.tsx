@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useAccount } from "wagmi";
 import { Shell } from "@/components/ui/shell";
 import { BudgetGauge } from "@/components/ui/budget-gauge";
 import { WalletGate } from "@/components/ui/wallet-gate";
+import { OwnerSpendApproval } from "@/components/approval/owner-spend-approval";
 import { IntentBuilder } from "@/components/intent/intent-builder";
 import { AgentDelegate } from "@/components/delegation/agent-delegate";
 import { ActivityFeed } from "@/components/feed/activity-feed";
@@ -12,18 +14,16 @@ import {
   DEMO_MAX_SPEND_PER_DAY,
   DEMO_MAX_SPEND_PER_TX,
 } from "@/lib/constants";
-import type { Hex } from "viem";
 import type { FeedItemReceipt } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [intentCommitted, setIntentCommitted] = useState(false);
-  const [, setDelegated] = useState(false);
+  const { address } = useAccount();
   const { data: feed } = useFeed();
+  const [dayStart] = useState(() => Math.floor(Date.now() / 1000) - 86400);
 
   // Today's confirmed-receipt total in raw 6-decimals
   const { spentToday, lastTx } = useMemo(() => {
     if (!feed) return { spentToday: 0n, lastTx: null as bigint | null };
-    const dayStart = Math.floor(Date.now() / 1000) - 86400;
     const todays = feed
       .filter(
         (e): e is FeedItemReceipt =>
@@ -37,7 +37,7 @@ export default function DashboardPage() {
       spentToday: total,
       lastTx: todays[0] ? BigInt(todays[0].amount) : null,
     };
-  }, [feed]);
+  }, [dayStart, feed]);
 
   return (
     <Shell>
@@ -80,16 +80,32 @@ export default function DashboardPage() {
           </header>
 
           {/* ── Setup steps ── */}
-          <IntentBuilder onCommitted={(_hash: Hex) => setIntentCommitted(true)} />
-
-          {intentCommitted && (
-            <AgentDelegate onDelegated={() => setDelegated(true)} />
-          )}
+          <SetupFlow key={address ?? "disconnected"} />
 
           {/* ── Ledger ── */}
           <ActivityFeed />
         </div>
       </WalletGate>
     </Shell>
+  );
+}
+
+function SetupFlow() {
+  const [intentCommitted, setIntentCommitted] = useState(false);
+  const [ownerApproved, setOwnerApproved] = useState(false);
+  const [, setDelegated] = useState(false);
+
+  return (
+    <>
+      <IntentBuilder onCommitted={() => setIntentCommitted(true)} />
+
+      {intentCommitted && (
+        <OwnerSpendApproval onApproved={() => setOwnerApproved(true)} />
+      )}
+
+      {intentCommitted && ownerApproved && (
+        <AgentDelegate onDelegated={() => setDelegated(true)} />
+      )}
+    </>
   );
 }

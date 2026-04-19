@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Section } from "@/components/ui/section";
 import { useToast } from "@/components/ui/toast";
 import { runDemoScenario, waitForDemoScenario } from "@/lib/api";
+import { useDemoRuntimeConfig } from "@/hooks/use-demo-runtime-config";
 import { appendScenarioToFeed, resetMockStore } from "@/mocks/mock-store";
 import { USE_MOCKS, truncateAddress } from "@/lib/constants";
 import type { DemoScenario, DemoStatus, DemoRunStatus } from "@/lib/types";
@@ -51,8 +52,11 @@ const SCENARIOS: {
   },
 ];
 
+let mockTxCounter = 1n;
+
 export function DemoPanel() {
   const { address } = useAccount();
+  const { data: runtimeConfig } = useDemoRuntimeConfig();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [statuses, setStatuses] = useState<Record<DemoScenario, DemoStatus>>({
@@ -62,6 +66,15 @@ export function DemoPanel() {
   });
 
   async function handleRun(scenario: DemoScenario) {
+    if (!address && !USE_MOCKS) {
+      toast({
+        variant: "warning",
+        title: "Wallet required",
+        description: "Connect the owner wallet before running a live scenario.",
+      });
+      return;
+    }
+
     setStatuses((prev) => ({
       ...prev,
       [scenario]: { scenario, status: "running" as DemoRunStatus },
@@ -82,7 +95,7 @@ export function DemoPanel() {
                 scenario,
                 status: "success",
                 receiptId,
-                txHash: ("0xaaaa" + String(Date.now()).padStart(60, "0")) as Hex,
+                txHash: nextMockTxHash(),
               };
         setStatuses((prev) => ({ ...prev, [scenario]: result }));
         qc.invalidateQueries({ queryKey: ["feed"] });
@@ -112,7 +125,7 @@ export function DemoPanel() {
         });
         return;
       }
-      const id = await runDemoScenario(scenario);
+      const id = await runDemoScenario(scenario, address ?? undefined);
       const result = await waitForDemoScenario(scenario, id);
       setStatuses((prev) => ({ ...prev, [scenario]: result }));
       qc.invalidateQueries({ queryKey: ["feed"] });
@@ -178,7 +191,7 @@ export function DemoPanel() {
       subtitle={
         USE_MOCKS
           ? "Trigger scripted runs — each scenario appends a new ledger entry in mock mode."
-          : "Runs on the live demo-control service. Results post to the indexer and appear in the feed."
+          : "Runs on the live demo-control service using the connected wallet as the owner. Results post to the indexer and appear in the feed."
       }
       action={
         <div className="flex items-center gap-5">
@@ -199,6 +212,19 @@ export function DemoPanel() {
                 : (process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402")}
             </span>
           </div>
+          {!USE_MOCKS && address && (
+            <div className="font-mono text-[11px] tnum text-text-tertiary">
+              owner · <span className="text-text-secondary">{truncateAddress(address, 6)}</span>
+            </div>
+          )}
+          {!USE_MOCKS && runtimeConfig && (
+            <div className="font-mono text-[11px] tnum text-text-tertiary">
+              operator ·{" "}
+              <span className="text-text-secondary">
+                {truncateAddress(runtimeConfig.operatorAddress, 6)}
+              </span>
+            </div>
+          )}
         </div>
       }
     >
@@ -227,6 +253,12 @@ export function DemoPanel() {
       </div>
     </Section>
   );
+}
+
+function nextMockTxHash(): Hex {
+  const value = mockTxCounter.toString(16).padStart(64, "0");
+  mockTxCounter += 1n;
+  return `0x${value}` as Hex;
 }
 
 function ScenarioRow({
