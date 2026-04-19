@@ -31,7 +31,7 @@
 
     "compile": "hardhat compile",
     "clean": "hardhat clean",
-    "test:contracts": "hardhat test",
+    "test:contracts": "cd test && hardhat test --config ../hardhat.config.cts",
     "deploy:params:base-sepolia": "tsx scripts/buildDeployParameters.ts base-sepolia",
     "deploy:params:localhost": "tsx scripts/buildDeployParameters.ts localhost",
     "deploy:write-manifest:base-sepolia": "tsx scripts/writeArtifacts.ts base-sepolia 84532",

@@ -2,8 +2,15 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ignition-ethers";
 import * as dotenv from "dotenv";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-dotenv.config();
+for (const file of [".env.local", ".env"]) {
+    const resolved = path.resolve(process.cwd(), file);
+    if (fs.existsSync(resolved)) {
+        dotenv.config({ path: resolved, override: false });
+    }
+}
 
 const PK = process.env.DEPLOYER_PRIVATE_KEY;
 

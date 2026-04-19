@@ -116,6 +116,24 @@ describe("GuardedExecutor", () => {
         ).to.eq(true);
     });
 
+    it("setAgentDelegate can revoke a previously approved delegate", async () => {
+        const env = await loadFixture(deployFixture);
+        const agentId = makeAgentId("d2");
+        const owner = await env.user.getAddress();
+        const delegate = await env.delegate.getAddress();
+
+        await env.guardedExecutor.connect(env.user).setAgentDelegate(agentId, delegate, true);
+        await expect(
+            env.guardedExecutor.connect(env.user).setAgentDelegate(agentId, delegate, false),
+        )
+            .to.emit(env.guardedExecutor, "AgentDelegateSet")
+            .withArgs(owner, agentId, delegate, false);
+
+        expect(
+            await env.guardedExecutor.isDelegateApproved(owner, agentId, delegate),
+        ).to.eq(false);
+    });
+
     // --- Happy path ------------------------------------------------------------
     it("executeWithGuard transfers USDC, increments day + nonce, stores receipt", async () => {
         const s = await setup();

@@ -15,6 +15,7 @@ export function useFeed() {
       return getFeed(address);
     },
     enabled: !!address,
+    retry: false,
     refetchInterval: 3000,
   });
 }

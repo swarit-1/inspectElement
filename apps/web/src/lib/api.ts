@@ -26,6 +26,33 @@ import {
 } from "@/mocks/fixtures";
 import type { Address, Hex } from "viem";
 
+function describeServiceOffline(kind: "infra" | "runtime"): Error {
+  if (kind === "infra") {
+    return new Error(
+      `Infra service offline at ${INFRA_API_BASE}. Start \`npm --prefix services/infra run dev\` or set \`NEXT_PUBLIC_USE_MOCKS=true\`.`,
+    );
+  }
+
+  return new Error(
+    `Demo runtime offline at ${RUNTIME_API_BASE}. Start \`npm run demo\` or set \`NEXT_PUBLIC_USE_MOCKS=true\`.`,
+  );
+}
+
+async function fetchWithHelpfulErrors(
+  input: string,
+  init: RequestInit | undefined,
+  kind: "infra" | "runtime",
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw describeServiceOffline(kind);
+    }
+    throw err;
+  }
+}
+
 // ── Infra API (Dev 3) ──
 
 export async function postManifest(manifest: {
@@ -46,11 +73,11 @@ export async function postManifest(manifest: {
     };
   }
 
-  const res = await fetch(`${INFRA_API_BASE}/v1/manifests`, {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/manifests`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(manifest),
-  });
+  }, "infra");
 
   if (!res.ok) throw new Error(`Manifest pin failed: ${res.status}`);
   return res.json();
@@ -63,7 +90,7 @@ export async function getFeed(owner: Address): Promise<FeedItem[]> {
     return MOCK_FEED;
   }
 
-  const res = await fetch(`${INFRA_API_BASE}/v1/feed?owner=${owner}`);
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/feed?owner=${owner}`, undefined, "infra");
   if (!res.ok) throw new Error(`Feed fetch failed: ${res.status}`);
   const raw = (await res.json()) as unknown[];
   return raw.map(normalizeFeedEntry).filter((x): x is FeedItem => x !== null);
@@ -75,7 +102,7 @@ export async function getReceipt(receiptId: string): Promise<ReceiptDetail> {
     return MOCK_RECEIPT_DETAIL;
   }
 
-  const res = await fetch(`${INFRA_API_BASE}/v1/receipts/${receiptId}`);
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/receipts/${receiptId}`, undefined, "infra");
   if (!res.ok) throw new Error(`Receipt fetch failed: ${res.status}`);
   const raw = await res.json();
   return normalizeReceiptDetail(raw);
@@ -87,7 +114,11 @@ export async function getChallenge(challengeId: string): Promise<ChallengeDetail
     return MOCK_CHALLENGE_DETAIL;
   }
 
-  const res = await fetch(`${INFRA_API_BASE}/v1/challenges/${challengeId}`);
+  const res = await fetchWithHelpfulErrors(
+    `${INFRA_API_BASE}/v1/challenges/${challengeId}`,
+    undefined,
+    "infra",
+  );
   if (!res.ok) throw new Error(`Challenge fetch failed: ${res.status}`);
   const raw = await res.json();
   return normalizeChallengeDetail(raw);
@@ -110,11 +141,11 @@ export async function prepareChallenge(
     };
   }
 
-  const res = await fetch(`${INFRA_API_BASE}/v1/challenges/prepare-amount`, {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/challenges/prepare-amount`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ receiptId, challenger }),
-  });
+  }, "infra");
   if (!res.ok) throw new Error(`Challenge prep failed: ${res.status}`);
   return res.json();
 }
@@ -128,11 +159,11 @@ export async function postReviewerResolve(body: {
     await delay(400);
     return { broadcasted: false, calldata: "0x" };
   }
-  const res = await fetch(`${INFRA_API_BASE}/v1/reviewer/resolve`, {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/reviewer/resolve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }, "infra");
   if (!res.ok) throw new Error(`Reviewer resolve failed: ${res.status}`);
   return res.json();
 }
@@ -145,9 +176,9 @@ export async function runDemoScenario(scenario: DemoScenario): Promise<string> {
     return `mock-${scenario}-${Date.now()}`;
   }
 
-  const res = await fetch(`${RUNTIME_API_BASE}/demo/run-${scenario}`, {
+  const res = await fetchWithHelpfulErrors(`${RUNTIME_API_BASE}/demo/run-${scenario}`, {
     method: "POST",
-  });
+  }, "runtime");
   if (!res.ok) throw new Error(`Demo run failed: ${res.status}`);
   const body = (await res.json()) as { scenarioId?: string };
   if (!body.scenarioId) throw new Error("Demo run did not return scenarioId");
@@ -160,7 +191,7 @@ export async function getDemoStatus(): Promise<DemoStatus> {
     return { ...MOCK_DEMO_IDLE, ...mockDemoOverride };
   }
 
-  const res = await fetch(`${RUNTIME_API_BASE}/demo/status`);
+  const res = await fetchWithHelpfulErrors(`${RUNTIME_API_BASE}/demo/status`, undefined, "runtime");
   if (!res.ok) throw new Error(`Demo status failed: ${res.status}`);
   const raw = await res.json();
   return mapDemoStatusResponse(raw);
@@ -179,7 +210,16 @@ export async function waitForDemoScenario(
 
   for (let i = 0; i < maxAttempts; i++) {
     await delay(1000);
-    const res = await fetch(`${RUNTIME_API_BASE}/demo/status`);
+    let res: Response;
+    try {
+      res = await fetchWithHelpfulErrors(`${RUNTIME_API_BASE}/demo/status`, undefined, "runtime");
+    } catch (err) {
+      return {
+        scenario,
+        status: "failed",
+        error: err instanceof Error ? err.message : "Demo runtime offline",
+      };
+    }
     if (!res.ok) continue;
     const raw = await res.json();
     const last = (raw as { last?: DemoStatusLast | null }).last;

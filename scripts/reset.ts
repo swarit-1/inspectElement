@@ -26,7 +26,7 @@ function main() {
   console.log("  0x1111111111111111111111111111111111111111");
   console.log("  0x2222222222222222222222222222222222222222");
   console.log("  0x3333333333333333333333333333333333333333\n");
-  console.log("Keep deployments/base-sepolia.json and apps/web/src/config/base-sepolia.json aligned.");
+  console.log("The web app reads deployments/base-sepolia.json directly; override with NEXT_PUBLIC_*_ADDRESS only when iterating locally.");
   console.log("=== Done ===\n");
 }
 
