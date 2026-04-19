@@ -241,7 +241,7 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
       title="Set payment rules"
       subtitle="Choose who the agent may pay; the shared protocol contracts are already deployed for you"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-8">
+      <div className="grid grid-cols-1 gap-y-10 2xl:grid-cols-[minmax(0,1.24fr)_minmax(19rem,0.96fr)] 2xl:gap-x-12 2xl:gap-y-8">
         {/* Form column */}
         <div className="flex flex-col gap-7">
           <div className="border border-rule-subtle bg-bg-raised/40 px-4 py-4 flex flex-col gap-3">

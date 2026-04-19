@@ -204,7 +204,7 @@ export function OnboardingWizard() {
           </p>
         </motion.div>
 
-        <div className="grid gap-8 lg:grid-cols-[300px_1fr] items-start">
+        <div className="grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)] items-start">
           <div className="hairline-top hairline-bottom">
             <WizardStepper
               steps={steps}
