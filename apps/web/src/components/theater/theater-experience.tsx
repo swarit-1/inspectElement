@@ -44,7 +44,15 @@ export function TheaterExperience() {
   const { toast } = useToast();
   const [active, setActive] = useState<ActiveRun | null>(null);
   const [viewMode, setViewMode] = useState<"story" | "evidence">("story");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerOpen = viewMode === "evidence";
+
+  function handleViewModeChange(mode: "story" | "evidence") {
+    setViewMode(mode);
+  }
+
+  function handleDrawerOpenChange(open: boolean) {
+    setViewMode(open ? "evidence" : "story");
+  }
 
   async function handleRun(scenario: DemoScenario) {
     if (!address && !USE_MOCKS) {
@@ -165,7 +173,7 @@ export function TheaterExperience() {
     if (!USE_MOCKS) return;
     resetMockStore();
     setActive(null);
-    setDrawerOpen(false);
+    setViewMode("story");
     qc.invalidateQueries({ queryKey: ["feed"] });
     toast({
       variant: "info",
@@ -235,10 +243,10 @@ export function TheaterExperience() {
                 key={active.runKey}
                 active={active}
                 viewMode={viewMode}
-                onViewModeChange={setViewMode}
+                onViewModeChange={handleViewModeChange}
                 onRerun={() => void handleRun(active.scenario)}
                 drawerOpen={drawerOpen}
-                onDrawerOpenChange={setDrawerOpen}
+                onDrawerOpenChange={handleDrawerOpenChange}
               />
             ) : (
               <EmptyTheater key="empty" />
@@ -295,7 +303,8 @@ function ActiveTheater({
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
         onRerun={onRerun}
-        onOpenDrawer={() => onDrawerOpenChange(true)}
+        drawerOpen={drawerOpen}
+        onDrawerOpenChange={onDrawerOpenChange}
       />
       <EvidenceDockSlot
         active={active}
@@ -313,14 +322,16 @@ function TheaterBody({
   viewMode,
   onViewModeChange,
   onRerun,
-  onOpenDrawer,
+  drawerOpen,
+  onDrawerOpenChange,
 }: {
   active: ActiveRun;
   state: VisualizerState;
   viewMode: "story" | "evidence";
   onViewModeChange: (m: "story" | "evidence") => void;
   onRerun: () => void;
-  onOpenDrawer: () => void;
+  drawerOpen: boolean;
+  onDrawerOpenChange: (open: boolean) => void;
 }) {
   const { phase, phaseIndex, phases, mode, isTerminal, isHolding, controls } =
     state;
@@ -388,9 +399,9 @@ function TheaterBody({
           {SCENARIOS.find((s) => s.id === active.scenario)?.seq}
         </span>
         <EvidenceDrawerHandle
-          open={false}
-          onClick={onOpenDrawer}
-          hint="Show evidence"
+          open={drawerOpen}
+          onClick={() => onDrawerOpenChange(!drawerOpen)}
+          hint="Open evidence"
         />
       </div>
     </div>
