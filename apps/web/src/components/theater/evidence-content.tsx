@@ -64,11 +64,11 @@ function Overview({
         <span className="eyebrow text-text-secondary">What happened</span>
         <p className="mt-2 text-[13px] text-text-secondary leading-relaxed">
           {scenario === "legit" &&
-            "The agent proposed a 2.0 USDC transfer to an allowlisted merchant. Every policy check passed; the guard co-signed and the transaction executed."}
+            "The agent proposed a 2.0 USD transfer to an allowlisted merchant. Every policy check passed; the guard co-signed and the transaction executed."}
           {scenario === "blocked" &&
-            "The agent proposed 20.0 USDC to a target not on the owner's allowlist. The guard rejected the transaction pre-execution — USDC never moved."}
+            "The agent proposed 20.0 USD to a target not on the owner's allowlist. The guard rejected the transaction pre-execution — the stablecoin never moved."}
           {scenario === "overspend" &&
-            "The agent proposed 15.0 USDC to an allowlisted merchant, exceeding the 10.0 USDC per-tx cap. The tx executed but the receipt is challengeable within the recourse window."}
+            "The agent proposed 15.0 USD to an allowlisted merchant, exceeding the 10.0 USD per-tx cap. The tx executed but the receipt is challengeable within the recourse window."}
         </p>
       </div>
       <div>
@@ -76,15 +76,15 @@ function Overview({
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12px] font-mono tnum">
           <dt className="text-text-quat">amount</dt>
           <dd className="text-text-primary text-right">
-            {policy.amountUsdc} USDC
+            {policy.amountUsdc} USD
           </dd>
           <dt className="text-text-quat">per-tx cap</dt>
           <dd className="text-text-tertiary text-right">
-            {policy.perTxCapUsdc} USDC
+            {policy.perTxCapUsdc} USD
           </dd>
           <dt className="text-text-quat">daily cap</dt>
           <dd className="text-text-tertiary text-right">
-            {policy.dailyCapUsdc} USDC
+            {policy.dailyCapUsdc} USD
           </dd>
           <dt className="text-text-quat">counterparty</dt>
           <dd className="text-text-tertiary text-right">

@@ -82,8 +82,8 @@ export function OwnerSpendApproval({
         setStep("confirmed");
         toast({
           variant: "success",
-          title: "USDC allowance live (mock)",
-          description: `GuardedExecutor may spend up to ${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC.`,
+          title: "Stablecoin allowance live (mock)",
+          description: `GuardedExecutor may spend up to ${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD.`,
         });
       }, 900);
       return;
@@ -110,8 +110,8 @@ export function OwnerSpendApproval({
       setStep("confirmed");
       toast({
         variant: "success",
-        title: "USDC allowance live",
-        description: `GuardedExecutor may pull up to ${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC per day.`,
+        title: "Stablecoin allowance live",
+        description: `GuardedExecutor may pull up to ${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD per day.`,
         action: {
           label: "View tx",
           href: `https://sepolia.basescan.org/tx/${hash}`,
@@ -147,7 +147,7 @@ export function OwnerSpendApproval({
   return (
     <Section
       kicker="Step II · Spending Rail"
-      title="Approve owner USDC"
+      title="Approve owner stablecoin"
       subtitle="Let GuardedExecutor pull up to the daily cap from this wallet during live demo runs"
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-6 max-w-[820px]">
@@ -159,13 +159,13 @@ export function OwnerSpendApproval({
             </dd>
             <dt className="eyebrow">Allowance target</dt>
             <dd className="font-mono text-text-secondary">
-              {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC
+              {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD
             </dd>
             {!USE_MOCKS && (
               <>
                 <dt className="eyebrow">Current allowance</dt>
                 <dd className="font-mono text-text-secondary">
-                  {formatUsdc(allowance)} USDC
+                  {formatUsdc(allowance)} USD
                 </dd>
               </>
             )}
@@ -228,12 +228,12 @@ export function OwnerSpendApproval({
         <aside className="flex flex-col gap-3 text-[12px] text-text-tertiary leading-relaxed max-w-[40ch]">
           <div className="eyebrow text-text-secondary">What this does</div>
           <p>
-            Approves the protocol executor to transfer USDC from the connected
+            Approves the protocol executor to transfer stablecoin from the connected
             owner wallet when the server wallet submits a guarded payment.
           </p>
           <p>
             The approval is capped at the demo&apos;s daily limit, so the live
-            runtime cannot pull more than {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC
+            runtime cannot pull more than {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD
             without a fresh signature.
           </p>
         </aside>

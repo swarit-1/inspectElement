@@ -34,7 +34,7 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
         variant: "success",
         title: "Challenge upheld",
         description: challenge.payoutAmount
-          ? `${formatUsdc(challenge.payoutAmount)} USDC paid from operator stake.`
+          ? `${formatUsdc(challenge.payoutAmount)} USD paid from operator stake.`
           : "Operator stake slashed to the owner.",
         action: challenge.txHash
           ? {
@@ -108,7 +108,7 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 py-5 text-[12px] tnum">
         <dt className="eyebrow">Bond posted</dt>
         <dd className="font-mono text-text-secondary">
-          {formatUsdc(challenge.bondAmount)} USDC
+          {formatUsdc(challenge.bondAmount)} USD
         </dd>
         <dt className="eyebrow">Challenger</dt>
         <dd className="font-mono text-text-secondary">
@@ -130,7 +130,7 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
           <>
             <dt className="eyebrow text-success">Payout</dt>
             <dd className="font-mono text-success font-semibold">
-              +{formatUsdc(challenge.payoutAmount)} USDC
+              +{formatUsdc(challenge.payoutAmount)} USD
             </dd>
           </>
         )}
@@ -142,7 +142,7 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
           {challenge.payoutAmount && (
             <>
               <span className="font-mono tnum font-semibold">
-                {formatUsdc(challenge.payoutAmount)} USDC
+                {formatUsdc(challenge.payoutAmount)} USD
               </span>{" "}
               returned to owner from operator stake.
             </>

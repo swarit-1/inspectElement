@@ -24,12 +24,12 @@ export function ExposurePanel({
   const policyCards = [
     {
       label: "Per-tx cap",
-      value: `${formatUsdc(DEMO_MAX_SPEND_PER_TX)} USDC`,
+      value: `${formatUsdc(DEMO_MAX_SPEND_PER_TX)} USD`,
       detail: "Any single payment above this is refused pre-execution.",
     },
     {
       label: "Daily cap",
-      value: `${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC`,
+      value: `${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD`,
       detail: "Rolling 24-hour ceiling on agent spend.",
     },
     {

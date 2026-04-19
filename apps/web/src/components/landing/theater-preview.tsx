@@ -71,7 +71,7 @@ export function TheaterPreview() {
             <div className="flex items-center gap-3">
               <span className="eyebrow text-accent">S-01</span>
               <span className="font-mono text-[11px] tnum text-text-tertiary">
-                legit payment · 2.0 USDC → allowlisted merchant
+                legit payment · 2.0 USD → allowlisted merchant
               </span>
             </div>
             <motion.span

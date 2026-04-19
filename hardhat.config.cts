@@ -30,25 +30,25 @@ const config: HardhatUserConfig = {
         artifacts: "artifacts",
     },
     networks: {
-        hardhat: { chainId: 31337 },
+        hardhat: { type: "edr-simulated", chainId: 31337 },
         baseSepolia: {
+            type: "http",
             url: process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org",
             chainId: 84532,
             accounts: PK ? [PK] : [],
         },
     },
-    etherscan: {
-        apiKey: { baseSepolia: process.env.BASESCAN_API_KEY ?? "" },
-        customChains: [
-            {
-                network: "baseSepolia",
-                chainId: 84532,
-                urls: {
-                    apiURL: "https://api-sepolia.basescan.org/api",
-                    browserURL: "https://sepolia.basescan.org",
+    chainDescriptors: {
+        84532: {
+            name: "baseSepolia",
+            blockExplorers: {
+                etherscan: {
+                    name: "BaseScan Sepolia",
+                    url: "https://sepolia.basescan.org",
+                    apiUrl: "https://api-sepolia.basescan.org/api",
                 },
             },
-        ],
+        },
     },
 };
 

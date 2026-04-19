@@ -459,7 +459,7 @@ function StepPolicy({
     <StepShell
       kicker="Step 03"
       title="Commit the spend policy."
-      body="Pin the manifest to storage and register the intent hash on-chain. Approve the executor's spending allowance for USDC."
+      body="Pin the manifest to storage and register the intent hash on-chain. Approve the executor's stablecoin spending allowance."
     >
       <div className="flex flex-col gap-10">
         <IntentBuilder
@@ -536,19 +536,19 @@ function StepFirstRun({
             seq="S-01"
             label="Legit payment"
             tone="success"
-            detail="2.0 USDC passes all checks, receipt minted."
+            detail="2.0 USD passes all checks, receipt minted."
           />
           <MiniScenario
             seq="S-02"
             label="Blocked attack"
             tone="danger"
-            detail="20.0 USDC to unknown target, guard rejects pre-exec."
+            detail="20.0 USD to unknown target, guard rejects pre-exec."
           />
           <MiniScenario
             seq="S-03"
             label="Overspend"
             tone="warning"
-            detail="15.0 USDC past cap, receipt becomes challengeable."
+            detail="15.0 USD past cap, receipt becomes challengeable."
           />
         </div>
         <div className="hairline-top pt-6 flex items-center gap-5 flex-wrap">

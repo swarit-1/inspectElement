@@ -61,7 +61,7 @@ function PolicyPanelImpl({ scenario, phaseReached, realResult }: Props) {
               color: exceeds ? "var(--status-warning)" : "var(--text-primary)",
             }}
           >
-            {policy.amountUsdc} USDC
+            {policy.amountUsdc} USD
           </span>
         </div>
         <div className="relative h-[10px] overflow-hidden" style={{ background: "var(--bg-inset)" }}>
@@ -90,7 +90,7 @@ function PolicyPanelImpl({ scenario, phaseReached, realResult }: Props) {
         </div>
         <div className="flex items-baseline justify-between">
           <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
-            per-tx cap · {policy.perTxCapUsdc} USDC
+            per-tx cap · {policy.perTxCapUsdc} USD
           </span>
           {exceeds && (
             <span
@@ -135,7 +135,7 @@ function PolicyPanelImpl({ scenario, phaseReached, realResult }: Props) {
           daily cap
         </span>
         <span className="font-mono text-[12px] tnum text-text-secondary">
-          {policy.dailyCapUsdc} USDC
+          {policy.dailyCapUsdc} USD
         </span>
       </div>
 

@@ -172,7 +172,7 @@ function LandingCopy() {
           className="mt-5 text-text-secondary leading-relaxed max-w-[42ch]"
           style={{ fontSize: "var(--t-md)" }}
         >
-          A vault door between your USDC and an autonomous agent. Set the spend
+          A vault door between your stablecoin and an autonomous agent. Set the spend
           envelope, monitor every action, dispute what shouldn&apos;t have
           happened.
         </p>

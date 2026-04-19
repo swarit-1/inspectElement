@@ -26,12 +26,12 @@ export function DeltaViz({ amount }: DeltaVizProps) {
             className="font-display font-semibold tracking-tight text-text-primary mt-1.5"
             style={{ fontSize: "var(--t-lg)", letterSpacing: "-0.02em" }}
           >
-            {formatUsdc(over)} USDC over policy
+            {formatUsdc(over)} USD over policy
           </h3>
           <p className="text-[12.5px] text-text-tertiary mt-1 max-w-[56ch]">
             The per-transaction cap is{" "}
             <span className="font-mono text-text-secondary">
-              {formatUsdc(cap)} USDC
+              {formatUsdc(cap)} USD
             </span>
             . This receipt exceeds that cap by the amount below.
           </p>
@@ -85,15 +85,15 @@ export function DeltaViz({ amount }: DeltaVizProps) {
       </div>
 
       <dl className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rule-subtle">
-        <Stat label="Allowed" value={`${formatUsdc(cap)} USDC`} tone="success" />
+        <Stat label="Allowed" value={`${formatUsdc(cap)} USD`} tone="success" />
         <Stat
           label="Actual"
-          value={`${formatUsdc(actual)} USDC`}
+          value={`${formatUsdc(actual)} USD`}
           tone="warning"
         />
         <Stat
           label="Excess (claimable)"
-          value={`${formatUsdc(over)} USDC`}
+          value={`${formatUsdc(over)} USD`}
           tone="warning"
         />
       </dl>

@@ -134,7 +134,7 @@ export default function ReceiptPage() {
                       className="font-display font-medium text-text-tertiary tracking-tight"
                       style={{ fontSize: "var(--t-lg)" }}
                     >
-                      USDC
+                      USD
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-3 text-[12px] tnum font-mono text-text-tertiary">

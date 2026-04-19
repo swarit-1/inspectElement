@@ -107,8 +107,8 @@ export function TheaterExperience() {
             scenario === "overspend" && receiptId
               ? "Open the receipt to file an AmountViolation challenge."
               : scenario === "legit"
-                ? "2.0 USDC → merchant · receipt added to the ledger."
-                : "20.0 USDC → non-allowlisted target · USDC never moved.",
+                ? "2.0 USD → merchant · receipt added to the ledger."
+                : "20.0 USD → non-allowlisted target · stablecoin never moved.",
           action:
             scenario === "overspend" && receiptId
               ? {

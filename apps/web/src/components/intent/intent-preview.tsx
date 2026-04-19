@@ -38,7 +38,7 @@ export function IntentPreview({
         <Row label="token">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-mono text-text-secondary whitespace-nowrap">
-              USDC
+              stablecoin
             </span>
             <span className="font-mono text-[11px] text-text-quat whitespace-nowrap">
               {truncateAddress(CONTRACT_ADDRESSES.usdc, 4)}
@@ -48,13 +48,13 @@ export function IntentPreview({
 
         <Row label="maxSpendPerTx">
           <span className="font-mono font-semibold text-text-primary whitespace-nowrap">
-            {formatUsdc(maxSpendPerTx)} USDC
+            {formatUsdc(maxSpendPerTx)} USD
           </span>
         </Row>
 
         <Row label="maxSpendPerDay">
           <span className="font-mono font-semibold text-text-primary whitespace-nowrap">
-            {formatUsdc(maxSpendPerDay)} USDC
+            {formatUsdc(maxSpendPerDay)} USD
           </span>
         </Row>
 

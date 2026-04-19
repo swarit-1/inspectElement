@@ -76,7 +76,7 @@ export function PostureHeader({
         <HeroKpi
           kicker="Exposure · 24h"
           value={formatUsdc(remaining)}
-          unit="USDC headroom"
+          unit="USD headroom"
           tone={remainingPct < 20 ? "warning" : "default"}
           caption={
             <>

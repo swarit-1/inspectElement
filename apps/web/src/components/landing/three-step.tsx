@@ -18,7 +18,7 @@ const STEPS = [
     name: "Let the agent act",
     line: "Every action passes through the guard.",
     detail:
-      "The agent proposes. The guard checks allowlist, per-tx, and daily caps against the same on-chain intent. Breaches are rejected pre-execution — USDC never moves.",
+      "The agent proposes. The guard checks allowlist, per-tx, and daily caps against the same on-chain intent. Breaches are rejected pre-execution — the stablecoin never moves.",
     glyph: <GlyphAgent />,
   },
   {
@@ -167,9 +167,11 @@ function GlyphDefine() {
         opacity="0.5"
       />
       <motion.path
-        d="M48 52 L58 60 L48 68"
+        d="M36 54 L44 60 L36 66"
         stroke="currentColor"
         strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
         initial={{ pathLength: 0 }}
         whileInView={{ pathLength: 1 }}

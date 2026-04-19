@@ -21,7 +21,7 @@ const STEP_COPY: Record<OnboardingStepId, { title: string; body: string }> = {
   },
   policy: {
     title: "Commit the intent manifest",
-    body: "Pin the JSON manifest and approve USDC spend for the executor.",
+    body: "Pin the JSON manifest and approve stablecoin spend for the executor.",
   },
   delegate: {
     title: "Delegate the agent",

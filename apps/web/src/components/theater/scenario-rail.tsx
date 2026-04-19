@@ -20,7 +20,7 @@ export const SCENARIOS: ScenarioDescriptor[] = [
     label: "Legit payment",
     expected: "EXECUTED",
     description:
-      "2.0 USDC → allowlisted merchant, within per-tx and daily caps.",
+      "2.0 USD → allowlisted merchant, within per-tx and daily caps.",
     variant: "primary",
   },
   {
@@ -29,7 +29,7 @@ export const SCENARIOS: ScenarioDescriptor[] = [
     label: "Blocked attack",
     expected: "BLOCKED",
     description:
-      "20.0 USDC → non-allowlisted attacker. Guard rejects before USDC is touched.",
+      "20.0 USD → non-allowlisted attacker. Guard rejects before the stablecoin is touched.",
     variant: "danger",
   },
   {
@@ -38,7 +38,7 @@ export const SCENARIOS: ScenarioDescriptor[] = [
     label: "Overspend attack",
     expected: "EXECUTES → CHALLENGEABLE",
     description:
-      "15.0 USDC → allowlisted merchant. Exceeds 10 USDC per-tx cap; receipt is challengeable.",
+      "15.0 USD → allowlisted merchant. Exceeds 10 USD per-tx cap; receipt is challengeable.",
     variant: "secondary",
   },
 ];

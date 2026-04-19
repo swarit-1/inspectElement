@@ -52,7 +52,7 @@ export function BudgetGauge({
             className="font-body font-normal text-text-tertiary ml-2 tracking-normal"
             style={{ fontSize: "var(--t-md)" }}
           >
-            USDC
+            USD
           </span>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function BudgetGauge({
           <div
             className="absolute top-0 bottom-0 w-px bg-accent"
             style={{ left: `${txMarkPct}%` }}
-            aria-label={`Per-transaction cap at ${txCap} USDC`}
+            aria-label={`Per-transaction cap at ${txCap} USD`}
           />
           {/* Last tx tick */}
           {lastPct !== null && (
@@ -126,7 +126,7 @@ export function BudgetGauge({
           style={{ fontSize: "var(--t-sm)" }}
         >
           {formatUsdc(BigInt(Math.round(remaining * 1e6)))}{" "}
-          <span className="text-text-quat">USDC</span>
+          <span className="text-text-quat">USD</span>
           <span className="text-text-quat ml-3">
             {(100 - fillPct).toFixed(1)}%
           </span>

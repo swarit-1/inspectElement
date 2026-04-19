@@ -19,7 +19,7 @@ const redhat = Red_Hat_Text({
 
 const TITLE = "Vault — Guard layer for autonomous agents";
 const DESCRIPTION =
-  "On-chain intents + challenge arbitration for AI agents moving USDC on Base. Sign an intent, let an agent execute, challenge any misstep.";
+  "On-chain intents + challenge arbitration for AI agents moving stablecoins on Base. Sign an intent, let an agent execute, challenge any misstep.";
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Vault" }],
   keywords: [
     "Base",
-    "USDC",
+    "stablecoin",
     "AI agents",
     "intent",
     "guarded executor",

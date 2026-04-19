@@ -89,7 +89,7 @@ export function DecisionPanel({
   const plainEnglish = isTerminal
     ? terminal.detail
     : scenario === "blocked"
-      ? "The guard is evaluating a transfer to a target the owner never allowed. USDC will not move."
+      ? "The guard is evaluating a transfer to a target the owner never allowed. The stablecoin will not move."
       : scenario === "overspend"
         ? "The amount exceeds the per-tx cap. If executed, the receipt will be challengeable."
         : "The transfer is within every owner-set cap. Guard will sign and forward.";
@@ -153,18 +153,18 @@ export function DecisionPanel({
             label="Per-transaction cap"
             plainEnglish={
               policy.amountExceedsPerTx
-                ? `Amount ${policy.amountUsdc} USDC exceeds ${policy.perTxCapUsdc} cap.`
-                : `Amount ${policy.amountUsdc} USDC within ${policy.perTxCapUsdc} cap.`
+                ? `Amount ${policy.amountUsdc} USD exceeds ${policy.perTxCapUsdc} cap.`
+                : `Amount ${policy.amountUsdc} USD within ${policy.perTxCapUsdc} cap.`
             }
             state={perTxState}
-            detail={`${policy.amountUsdc} / ${policy.perTxCapUsdc} USDC`}
+            detail={`${policy.amountUsdc} / ${policy.perTxCapUsdc} USD`}
             index={1}
           />
           <PolicyCheck
             label="Daily spend cap"
-            plainEnglish={`Within ${policy.dailyCapUsdc} USDC over 24h window.`}
+            plainEnglish={`Within ${policy.dailyCapUsdc} USD over 24h window.`}
             state={dailyState}
-            detail={`${policy.amountUsdc} / ${policy.dailyCapUsdc} USDC`}
+            detail={`${policy.amountUsdc} / ${policy.dailyCapUsdc} USD`}
             index={2}
           />
         </ul>

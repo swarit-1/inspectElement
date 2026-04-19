@@ -254,7 +254,7 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
             </p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[11px] tnum font-mono">
               <dt className="text-text-quat">Token</dt>
-              <dd className="text-text-secondary">USDC</dd>
+              <dd className="text-text-secondary">stablecoin</dd>
               <dt className="text-text-quat">Registry</dt>
               <dd className="text-text-secondary">
                 {truncateAddress(CONTRACT_ADDRESSES.intentRegistry, 6)}
@@ -268,8 +268,8 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
 
           {/* Caps — read-only spec values */}
           <div className="grid grid-cols-2">
-            <ReadValue label="Per-tx cap" value={formatUsdc(DEMO_MAX_SPEND_PER_TX)} unit="USDC" />
-            <ReadValue label="Daily cap" value={formatUsdc(DEMO_MAX_SPEND_PER_DAY)} unit="USDC" />
+            <ReadValue label="Per-tx cap" value={formatUsdc(DEMO_MAX_SPEND_PER_TX)} unit="USD" />
+            <ReadValue label="Daily cap" value={formatUsdc(DEMO_MAX_SPEND_PER_DAY)} unit="USD" />
           </div>
 
           {/* Counterparties */}

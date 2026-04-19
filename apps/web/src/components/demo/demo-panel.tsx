@@ -28,7 +28,7 @@ const SCENARIOS: {
     label: "Legit payment",
     expected: "EXECUTED",
     description:
-      "2.0 USDC → allowlisted merchant, within per-tx and daily caps.",
+      "2.0 USD → allowlisted merchant, within per-tx and daily caps.",
     variant: "primary",
   },
   {
@@ -37,7 +37,7 @@ const SCENARIOS: {
     label: "Blocked attack",
     expected: "BLOCKED",
     description:
-      "20.0 USDC → non-allowlisted attacker. Guard rejects before USDC is touched.",
+      "20.0 USD → non-allowlisted attacker. Guard rejects before the stablecoin is touched.",
     variant: "danger",
   },
   {
@@ -46,7 +46,7 @@ const SCENARIOS: {
     label: "Overspend attack",
     expected: "EXECUTES → CHALLENGEABLE",
     description:
-      "15.0 USDC → allowlisted merchant. Exceeds 10 USDC per-tx cap; receipt is challengeable.",
+      "15.0 USD → allowlisted merchant. Exceeds 10 USD per-tx cap; receipt is challengeable.",
     variant: "secondary",
   },
 ];
@@ -85,7 +85,7 @@ export function DemoPanel() {
         contextDigest: "0x" + "0".repeat(64),
         owner: address ?? "0x" + "0".repeat(40),
         agentId: runtimeConfig?.agentId ?? "0x" + "0".repeat(64),
-        proposedAction: scenario === "legit" ? "Pay 2 USDC to merchant" : scenario === "blocked" ? "Pay 20 USDC to attacker" : "Pay 15 USDC to merchant (exceeds cap)",
+        proposedAction: scenario === "legit" ? "Pay 2 USD to merchant" : scenario === "blocked" ? "Pay 20 USD to attacker" : "Pay 15 USD to merchant (exceeds cap)",
       });
       setScreenResult(result);
     } catch {
@@ -153,8 +153,8 @@ export function DemoPanel() {
             scenario === "overspend" && receiptId
               ? "Open the receipt to file an AmountViolation challenge."
               : scenario === "legit"
-                ? "2.0 USDC → merchant · receipt added to the ledger."
-                : "20.0 USDC → non-allowlisted target · USDC never moved.",
+                ? "2.0 USD → merchant · receipt added to the ledger."
+                : "20.0 USD → non-allowlisted target · stablecoin never moved.",
           action:
             scenario === "overspend" && receiptId
               ? {

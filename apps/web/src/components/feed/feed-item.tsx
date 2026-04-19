@@ -139,7 +139,7 @@ function ReceiptRow({ item, index }: { item: FeedItemReceipt; index: number }) {
       amount={
         <>
           {formatUsdc(item.amount)}
-          <span className="text-text-tertiary font-normal ml-1.5">USDC</span>
+          <span className="text-text-tertiary font-normal ml-1.5">USD</span>
         </>
       }
       amountTone={isOver ? "text-warning" : "text-text-primary"}
@@ -191,7 +191,7 @@ function BlockedRow({ item, index }: { item: FeedItemBlocked; index: number }) {
         hasAmount ? (
           <>
             {formatUsdc(item.amount)}
-            <span className="text-text-tertiary font-normal ml-1.5">USDC</span>
+            <span className="text-text-tertiary font-normal ml-1.5">USD</span>
           </>
         ) : (
           <span className="text-text-tertiary">—</span>
@@ -227,7 +227,7 @@ function ChallengeRow({ item, index }: { item: FeedItemChallenge; index: number 
         isUpheld && item.payoutAmount ? (
           <>
             +{formatUsdc(item.payoutAmount)}
-            <span className="text-text-tertiary font-normal ml-1.5">USDC</span>
+            <span className="text-text-tertiary font-normal ml-1.5">USD</span>
           </>
         ) : (
           <span className="text-text-tertiary">—</span>

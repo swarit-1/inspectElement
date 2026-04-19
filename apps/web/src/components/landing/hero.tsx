@@ -43,8 +43,10 @@ export function LandingHero() {
           >
             A vault door
             <br />
-            between your{" "}
-            <span className="text-accent">USDC</span>
+            between{" "}
+            <span className="whitespace-nowrap">
+              your <span className="text-accent">stablecoin</span>
+            </span>
             <br />
             and an{" "}
             <AnimatedCaret reduced={!!reduced} />
@@ -106,19 +108,20 @@ export function LandingHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.66, ease: easeOutExpo, delay: 0.34 }}
-          className="hidden lg:flex flex-col gap-0 border border-rule bg-bg-surface/60 backdrop-blur-sm"
+          className="hidden lg:flex w-full min-w-[320px] max-w-[360px] flex-col gap-0 border border-rule bg-bg-surface/60 backdrop-blur-sm"
         >
-          <div className="flex items-center justify-between px-5 py-3 hairline-bottom">
+          <div className="grid grid-cols-[88px_1fr] items-baseline gap-x-4 px-5 py-3 hairline-bottom">
             <span className="eyebrow text-text-secondary">Live spec</span>
-            <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-accent">
+            <span className="text-right font-mono text-[10.5px] tnum tracking-wider uppercase text-accent">
               v0.1
             </span>
           </div>
-          <SpecRow label="chain" value="Base Sepolia · 84532" mono />
+          <SpecRow label="chain" value="Base Sepolia" mono />
+          <SpecRow label="chain id" value="84532" mono />
           <SpecRow label="guard" value="GuardedExecutor" mono />
-          <SpecRow label="per-tx cap" value="10.0 USDC" mono accent />
-          <SpecRow label="daily cap" value="50.0 USDC" mono accent />
-          <SpecRow label="recourse" value="challengeable receipts" />
+          <SpecRow label="per-tx cap" value="10.0 USD" mono accent />
+          <SpecRow label="daily cap" value="50.0 USD" mono accent />
+          <SpecRow label="recourse" value="challengeable" />
           <div className="px-5 py-3 hairline-top flex items-center gap-2">
             <motion.span
               aria-hidden
@@ -167,12 +170,12 @@ function SpecRow({
   accent?: boolean;
 }) {
   return (
-    <div className="px-5 py-2.5 flex items-center justify-between hairline-bottom last:border-b-0">
+    <div className="grid grid-cols-[88px_1fr] items-baseline gap-x-4 px-5 py-2.5 hairline-bottom last:border-b-0">
       <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
         {label}
       </span>
       <span
-        className={`text-[12.5px] ${mono ? "font-mono tnum" : ""} ${
+        className={`min-w-0 text-right text-[12.5px] leading-snug ${mono ? "font-mono tnum" : ""} ${
           accent ? "text-accent" : "text-text-secondary"
         }`}
       >

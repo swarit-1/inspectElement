@@ -75,7 +75,7 @@ const LEGIT: Phase[] = [
   {
     id: "dispatch",
     label: "Agent dispatched",
-    detail: "Runtime assembles tx · 2.0 USDC → allowlisted merchant.",
+    detail: "Runtime assembles tx · 2.0 USD → allowlisted merchant.",
     node: "agent",
     durationMs: 650,
     kind: "normal",
@@ -99,7 +99,7 @@ const LEGIT: Phase[] = [
   {
     id: "exec",
     label: "Target executed",
-    detail: "USDC transferred on-chain.",
+    detail: "Stablecoin transferred on-chain.",
     node: "target",
     durationMs: 600,
     kind: "normal",
@@ -135,7 +135,7 @@ const BLOCKED: Phase[] = [
   {
     id: "dispatch",
     label: "Agent dispatched",
-    detail: "Runtime assembles tx · 20.0 USDC → unknown target.",
+    detail: "Runtime assembles tx · 20.0 USD → unknown target.",
     node: "agent",
     durationMs: 650,
     kind: "normal",
@@ -160,7 +160,7 @@ const BLOCKED: Phase[] = [
   {
     id: "terminal",
     label: "Blocked at guard",
-    detail: "USDC never moved. No receipt issued.",
+    detail: "Stablecoin never moved. No receipt issued.",
     node: "guard",
     durationMs: 0,
     kind: "terminal",
@@ -179,7 +179,7 @@ const OVERSPEND: Phase[] = [
   {
     id: "dispatch",
     label: "Agent dispatched",
-    detail: "Runtime assembles tx · 15.0 USDC → allowlisted merchant.",
+    detail: "Runtime assembles tx · 15.0 USD → allowlisted merchant.",
     node: "agent",
     durationMs: 650,
     kind: "normal",
@@ -203,7 +203,7 @@ const OVERSPEND: Phase[] = [
   {
     id: "exec",
     label: "Target executed",
-    detail: "USDC transferred · receipt marked challengeable.",
+    detail: "Stablecoin transferred · receipt marked challengeable.",
     node: "target",
     durationMs: 600,
     kind: "normal",
@@ -298,7 +298,7 @@ export function resolveTerminal(
     return {
       kind: "blocked",
       title: "Blocked at guard",
-      detail: `Reason · ${realResult.reasonCode.replace(/_/g, " ").toLowerCase()}. USDC never moved.`,
+      detail: `Reason · ${realResult.reasonCode.replace(/_/g, " ").toLowerCase()}. The stablecoin never moved.`,
       reasonCode: realResult.reasonCode,
     };
   }

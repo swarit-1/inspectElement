@@ -63,7 +63,7 @@ function stepLabel(step: ChallengeStep): string {
     case "preparing":
       return "Building calldata from the infra API…";
     case "approving":
-      return "Requesting USDC bond approval for the arbiter…";
+      return "Requesting stablecoin bond approval for the arbiter…";
     case "filing":
       return "Awaiting on-chain confirmation of fileChallenge…";
     case "indexing":
@@ -160,8 +160,8 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
         await waitForTransactionReceipt(config, { hash: approveHash });
         toast({
           variant: "success",
-          title: "USDC approval confirmed",
-          description: `Arbiter may now pull up to ${formatUsdc(bond)} USDC as bond.`,
+          title: "Stablecoin approval confirmed",
+          description: `Arbiter may now pull up to ${formatUsdc(bond)} USD as bond.`,
         });
       }
 
@@ -221,7 +221,7 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
             File AmountViolation challenge
           </h3>
           <p className="text-[12px] text-text-tertiary mt-1 max-w-[60ch]">
-            This receipt of {formatUsdc(receipt.amount)} USDC exceeds the per-tx
+            This receipt of {formatUsdc(receipt.amount)} USD exceeds the per-tx
             cap. Posting the bond opens a 24h dispute window; if upheld, you&apos;re
             refunded from operator stake.
           </p>
@@ -231,7 +231,7 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[12px] tnum">
         <dt className="eyebrow">Bond required</dt>
         <dd className="font-mono text-text-secondary">
-          {bondAmount ? `${formatUsdc(bondAmount)} USDC` : "1.0 USDC"}
+          {bondAmount ? `${formatUsdc(bondAmount)} USD` : "1.0 USD"}
           <span className="text-text-quat ml-2">refunded on success</span>
         </dd>
         <dt className="eyebrow">Refund source</dt>
@@ -291,7 +291,7 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
                       : "File challenge"}
           </Button>
           <span className="font-mono text-[11px] tnum text-text-quat">
-            requires USDC approval + tx signature
+            requires stablecoin approval + tx signature
           </span>
         </div>
       )}
@@ -312,10 +312,10 @@ function formatChainError(err: unknown): string {
     return "Signature declined in wallet.";
   }
   if (lower.includes("insufficient funds")) {
-    return "Insufficient USDC or ETH to post the challenge bond.";
+    return "Insufficient stablecoin or ETH to post the challenge bond.";
   }
   if (lower.includes("allowance")) {
-    return "USDC approval missing — try again to re-request allowance.";
+    return "Stablecoin approval missing — try again to re-request allowance.";
   }
   if (lower.length > 180) return msg.slice(0, 180) + "…";
   return msg || "Challenge failed.";
