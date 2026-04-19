@@ -114,6 +114,9 @@ if [[ ! -d node_modules ]]; then
   npm install --silent || { fail "npm install failed"; record "root: npm install failed"; exit 1; }
 fi
 
+# Remove stale infra .env so vitest doesn't inherit prior run's CHAIN_ID/DEPLOYMENTS_PATH.
+rm -f services/infra/.env
+
 # --- 1. compile --------------------------------------------------------------
 step "1. hardhat compile"
 if npx hardhat compile > "$LOG_DIR/compile.log" 2>&1; then

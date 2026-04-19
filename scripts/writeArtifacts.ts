@@ -41,8 +41,6 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -174,12 +172,12 @@ function main(): void {
 
     // Build the schema infra + packages/trace expect.
     const contracts = {
-        IntentRegistry: addresses.IntentRegistry,
-        AgentRegistry: addresses.AgentRegistry,
-        GuardedExecutor: addresses.GuardedExecutor,
-        ChallengeArbiter: addresses.ChallengeArbiter,
-        StakeVault: addresses.StakeVault,
-        USDC: addresses.USDC ?? addresses.MockUSDC,
+        IntentRegistry: stripped.IntentRegistry,
+        AgentRegistry: stripped.AgentRegistry,
+        GuardedExecutor: stripped.GuardedExecutor,
+        ChallengeArbiter: stripped.ChallengeArbiter,
+        StakeVault: stripped.StakeVault,
+        USDC: stripped.USDC ?? stripped.MockUSDC,
     };
 
     const traceAckSigner =
