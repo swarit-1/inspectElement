@@ -94,6 +94,11 @@ describe("Integration — spec §3.9 demo flow", () => {
 
         // --- Step 2: blocked counterparty ---------------------------------------
         const blocked = await signedReq(blockedTarget, 1n * ONE_USDC);
+        const [blockedDecision, blockedReason] = await env.guardedExecutor
+            .connect(env.delegate)
+            .preflightCheck(blocked);
+        expect(blockedDecision).to.eq(2n); // RED
+        expect(blockedReason).to.eq(REASON.COUNTERPARTY_NOT_ALLOWED);
         await expect(env.guardedExecutor.connect(env.delegate).executeWithGuard(blocked))
             .to.be.revertedWithCustomError(env.guardedExecutor, "GuardRejected")
             .withArgs(REASON.COUNTERPARTY_NOT_ALLOWED);

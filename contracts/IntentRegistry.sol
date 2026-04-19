@@ -65,6 +65,16 @@ contract IntentRegistry is IIntentRegistry {
     }
 
     /// @inheritdoc IIntentRegistry
+    function intentByHash(bytes32 intentHash)
+        external
+        view
+        returns (IntentConfig memory cfg, string memory manifestURI)
+    {
+        cfg = _intentConfig[intentHash];
+        manifestURI = _manifestURI[intentHash];
+    }
+
+    /// @inheritdoc IIntentRegistry
     function getIntent(bytes32 intentHash)
         external
         view

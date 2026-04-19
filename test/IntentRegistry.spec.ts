@@ -29,9 +29,12 @@ describe("IntentRegistry", () => {
             .to.emit(env.intentRegistry, "IntentCommitted")
             .withArgs(await env.user.getAddress(), hash, "ipfs://m");
         expect(await env.intentRegistry.getActiveIntentHash(await env.user.getAddress())).to.eq(hash);
-        const [stored, uri] = await env.intentRegistry.getIntent(hash);
+        const [stored, uri] = await env.intentRegistry.intentByHash(hash);
         expect(stored.nonce).to.eq(1n);
         expect(uri).to.eq("ipfs://m");
+        const [storedViaAlias, uriViaAlias] = await env.intentRegistry.getIntent(hash);
+        expect(storedViaAlias.nonce).to.eq(stored.nonce);
+        expect(uriViaAlias).to.eq(uri);
     });
 
     it("rejects cfg.owner != msg.sender", async () => {

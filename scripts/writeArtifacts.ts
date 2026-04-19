@@ -143,6 +143,11 @@ function writeAbis(): string[] {
     return wrote;
 }
 
+function writeJson(file: string, value: unknown): void {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(value, null, 2) + "\n");
+}
+
 function main(): void {
     const [, , networkName, chainIdStr] = process.argv;
     if (!networkName || !chainIdStr) {
@@ -215,12 +220,15 @@ function main(): void {
         },
     };
 
-    const deploymentsDir = path.join(ROOT, "deployments");
-    fs.mkdirSync(deploymentsDir, { recursive: true });
-    fs.writeFileSync(
-        path.join(deploymentsDir, `${networkName}.json`),
-        JSON.stringify(out, null, 2) + "\n",
-    );
+    writeJson(path.join(ROOT, "deployments", `${networkName}.json`), out);
+    let wroteWebMirror = false;
+    if (networkName === "base-sepolia") {
+        // Legacy mirror retained for any tooling that still expects the file
+        // inside the web package. The app itself now imports the repo-root
+        // manifest directly.
+        writeJson(path.join(ROOT, "apps", "web", "src", "config", "base-sepolia.json"), out);
+        wroteWebMirror = true;
+    }
 
     // Write ABIs to abi/<Name>.json.
     const abiDir = path.join(ROOT, "abi");
@@ -248,7 +256,8 @@ function main(): void {
         );
     }
 
-    console.log(`Wrote deployments/${networkName}.json and abi/*.json`);
+    const suffix = wroteWebMirror ? ", and web manifest mirror" : "";
+    console.log(`Wrote deployments/${networkName}.json and abi/*.json${suffix}`);
 }
 
 main();
