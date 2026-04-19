@@ -6,6 +6,7 @@
  * Expected outcome: RED, COUNTERPARTY_NOT_ALLOWED.
  */
 
+import "../scripts/load-env.js";
 import { loadAgentEnv, runPreflightOnlyFlow } from "./shared.js";
 
 async function main() {

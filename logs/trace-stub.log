@@ -1,0 +1,5 @@
+
+> intentguard@0.1.0 trace-stub
+> tsx packages/trace/src/trace-stub-server.ts
+
+[trace-stub] Listening on :7403 | signer=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266

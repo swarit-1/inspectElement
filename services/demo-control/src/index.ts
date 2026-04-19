@@ -10,9 +10,11 @@
  * outcome ∈ { "success", "blocked", "failed" }
  */
 
+import "../../../scripts/load-env.js";
 import express from "express";
 import { randomUUID } from "crypto";
 import { pathToFileURL } from "url";
+
 import { getAddress, type Address } from "viem";
 import {
   loadAgentEnv,

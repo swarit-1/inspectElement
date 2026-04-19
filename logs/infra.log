@@ -1,0 +1,13 @@
+
+> @intentguard/infra@0.1.0 dev
+> tsx watch src/server.ts
+
+{"level":30,"time":1776613614967,"service":"intentguard-infra","url":"https://zywxymgndrwftgajhoxf.supabase.co","msg":"Supabase client initialized"}
+{"level":30,"time":1776613614967,"service":"intentguard-infra","msg":"Database provider: Supabase"}
+{"level":30,"time":1776613614990,"service":"intentguard-infra","traceAckSigner":"0x970436F359b25e8957238097697E0655C148C645","reviewerSigner":"0xd133e70cc9bef5963F50fa3567D83F6A7523BF71","msg":"Signer initialized"}
+{"level":30,"time":1776613614990,"service":"intentguard-infra","port":8787,"host":"0.0.0.0","chainId":84532,"traceAckSigner":"0x970436F359b25e8957238097697E0655C148C645","publicBaseUrl":"http://localhost:8787","msg":"Starting IntentGuard infra service"}
+{"level":40,"time":1776613614990,"service":"intentguard-infra","publicBaseUrl":"http://localhost:8787","msg":"PUBLIC_BASE_URL points at localhost — set it to the public URL of this server before the demo, or off-chain consumers will fail to fetch traceURIs"}
+{"level":40,"time":1776613614992,"service":"intentguard-infra","msg":"IPFS_TOKEN unset; using local content-addressed store fallback"}
+{"level":40,"time":1776613614993,"service":"intentguard-infra","msg":"IPFS_TOKEN unset; using local content-addressed store fallback"}
+{"level":30,"time":1776613614995,"service":"intentguard-infra","addresses":["0x0000000000000000000000000000000000000003","0x0000000000000000000000000000000000000002","0x0000000000000000000000000000000000000004","0x0000000000000000000000000000000000000005"],"pollMs":2500,"batchBlocks":2000,"msg":"Indexer started"}
+{"level":30,"time":1776613615014,"service":"intentguard-infra","url":"http://0.0.0.0:8787","msg":"API listening"}

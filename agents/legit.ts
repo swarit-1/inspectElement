@@ -5,6 +5,7 @@
  * Expected outcome: GREEN, receipt emitted, txHash returned.
  */
 
+import "../scripts/load-env.js";
 import { loadAgentEnv, runExecuteFlow } from "./shared.js";
 
 async function main() {

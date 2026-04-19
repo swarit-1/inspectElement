@@ -8,6 +8,7 @@
  * 5. Print agentId, txHashes, stake amount
  */
 
+import "./load-env.js";
 import {
   createPublicClient,
   createWalletClient,

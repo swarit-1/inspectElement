@@ -13,6 +13,9 @@
   ],
   "scripts": {
     "dev": "npm --workspace web run dev",
+    "dev:all": "scripts/dev-all.sh",
+    "dev:all:stop": "scripts/dev-all.sh stop",
+    "dev:all:status": "scripts/dev-all.sh status",
     "build": "npm run build:runtime && npm run build:web",
     "build:runtime": "tsc -p tsconfig.json",
     "build:web": "npm --workspace web run build",
@@ -42,6 +45,7 @@
     "@base-org/account": "^2.5.4",
     "@coinbase/cdp-sdk": "^1.48.0",
     "@coinbase/onchainkit": "^1.1.2",
+    "@google/genai": "^1.50.1",
     "@openzeppelin/contracts": "5.0.2",
     "@privy-io/react-auth": "^3.22.1",
     "@privy-io/wagmi": "^4.0.5",

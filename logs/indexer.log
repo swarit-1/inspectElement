@@ -1,0 +1,6 @@
+
+> @intentguard/infra@0.1.0 indexer
+> tsx src/indexer/run.ts
+
+{"level":30,"time":1776613614735,"service":"intentguard-infra","addresses":["0x0000000000000000000000000000000000000003","0x0000000000000000000000000000000000000002","0x0000000000000000000000000000000000000004","0x0000000000000000000000000000000000000005"],"pollMs":2500,"batchBlocks":2000,"msg":"Indexer started"}
+{"level":30,"time":1776613614859,"service":"intentguard-infra","url":"https://zywxymgndrwftgajhoxf.supabase.co","msg":"Supabase client initialized"}

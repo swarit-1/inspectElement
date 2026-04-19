@@ -7,6 +7,7 @@
  * User can then file AmountViolation challenge.
  */
 
+import "../scripts/load-env.js";
 import { loadAgentEnv, runExecuteFlow } from "./shared.js";
 
 async function main() {

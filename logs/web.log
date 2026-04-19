@@ -1,0 +1,19 @@
+
+> web@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.148.102.176:3000
+- Environments: .env.local
+✓ Ready in 306ms
+
+ GET /onboarding?step=first-run 200 in 585ms (next.js: 180ms, application-code: 405ms)
+ HEAD /onboarding 200 in 44ms (next.js: 3ms, application-code: 41ms)
+ GET /dashboard 200 in 55ms (next.js: 42ms, application-code: 13ms)
+ GET /dashboard 200 in 29ms (next.js: 7ms, application-code: 21ms)
+ GET /theater 200 in 55ms (next.js: 45ms, application-code: 10ms)
+ GET /theater 200 in 185ms (next.js: 66ms, application-code: 120ms)
+ GET /theater 200 in 59ms (next.js: 2ms, application-code: 57ms)
+✓ Compiled in 1280ms
+ GET /theater 200 in 35ms (next.js: 10ms, application-code: 25ms)

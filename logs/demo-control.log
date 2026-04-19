@@ -1,0 +1,11 @@
+
+> intentguard@0.1.0 demo
+> tsx services/demo-control/src/index.ts
+
+[demo-control] Listening on :7402
+[demo-control] Endpoints:
+  GET  /demo/config
+  POST /demo/run-legit
+  POST /demo/run-blocked
+  POST /demo/run-overspend
+  GET  /demo/status
