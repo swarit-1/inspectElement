@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Section } from "@/components/ui/section";
 import { useToast } from "@/components/ui/toast";
 import { runDemoScenario, waitForDemoScenario } from "@/lib/api";
 import { useDemoRuntimeConfig } from "@/hooks/use-demo-runtime-config";
 import { appendScenarioToFeed, resetMockStore } from "@/mocks/mock-store";
 import { USE_MOCKS, truncateAddress } from "@/lib/constants";
-import type { DemoScenario, DemoStatus, DemoRunStatus } from "@/lib/types";
+import type { DemoScenario, DemoStatus } from "@/lib/types";
 import type { Hex } from "viem";
+import { DemoRunTheater } from "./demo-run-theater";
 
 const SCENARIOS: {
   id: DemoScenario;
@@ -54,16 +52,19 @@ const SCENARIOS: {
 
 let mockTxCounter = 1n;
 
+interface ActiveRun {
+  scenario: DemoScenario;
+  runKey: number;
+  isRunning: boolean;
+  realResult: DemoStatus | null;
+}
+
 export function DemoPanel() {
   const { address } = useAccount();
   const { data: runtimeConfig } = useDemoRuntimeConfig();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [statuses, setStatuses] = useState<Record<DemoScenario, DemoStatus>>({
-    legit: { scenario: "legit", status: "idle" },
-    blocked: { scenario: "blocked", status: "idle" },
-    overspend: { scenario: "overspend", status: "idle" },
-  });
+  const [active, setActive] = useState<ActiveRun | null>(null);
 
   async function handleRun(scenario: DemoScenario) {
     if (!address && !USE_MOCKS) {
@@ -75,14 +76,14 @@ export function DemoPanel() {
       return;
     }
 
-    setStatuses((prev) => ({
-      ...prev,
-      [scenario]: { scenario, status: "running" as DemoRunStatus },
-    }));
+    const runKey = Date.now();
+    setActive({ scenario, runKey, isRunning: true, realResult: null });
 
     try {
       if (USE_MOCKS) {
-        await new Promise((r) => setTimeout(r, 1400));
+        // Let the theater play a few beats before the mock result lands.
+        // The theater holds at the await phase until realResult is set.
+        await new Promise((r) => setTimeout(r, 2800));
         const { receiptId } = appendScenarioToFeed(scenario, address);
         const result: DemoStatus =
           scenario === "blocked"
@@ -97,7 +98,11 @@ export function DemoPanel() {
                 receiptId,
                 txHash: nextMockTxHash(),
               };
-        setStatuses((prev) => ({ ...prev, [scenario]: result }));
+        setActive((prev) =>
+          prev && prev.runKey === runKey
+            ? { ...prev, isRunning: false, realResult: result }
+            : prev,
+        );
         qc.invalidateQueries({ queryKey: ["feed"] });
         toast({
           variant:
@@ -120,14 +125,22 @@ export function DemoPanel() {
                 : "20.0 USDC → non-allowlisted target · USDC never moved.",
           action:
             scenario === "overspend" && receiptId
-              ? { label: "Open receipt", onClick: () => window.location.assign(`/receipt/${receiptId}`) }
+              ? {
+                  label: "Open receipt",
+                  onClick: () =>
+                    window.location.assign(`/receipt/${receiptId}`),
+                }
               : undefined,
         });
         return;
       }
       const id = await runDemoScenario(scenario, address ?? undefined);
       const result = await waitForDemoScenario(scenario, id);
-      setStatuses((prev) => ({ ...prev, [scenario]: result }));
+      setActive((prev) =>
+        prev && prev.runKey === runKey
+          ? { ...prev, isRunning: false, realResult: result }
+          : prev,
+      );
       qc.invalidateQueries({ queryKey: ["feed"] });
       if (result.status === "success") {
         toast({
@@ -156,10 +169,12 @@ export function DemoPanel() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      setStatuses((prev) => ({
-        ...prev,
-        [scenario]: { scenario, status: "failed", error: message },
-      }));
+      const failed: DemoStatus = { scenario, status: "failed", error: message };
+      setActive((prev) =>
+        prev && prev.runKey === runKey
+          ? { ...prev, isRunning: false, realResult: failed }
+          : prev,
+      );
       toast({
         variant: "danger",
         title: "Scenario failed",
@@ -171,11 +186,7 @@ export function DemoPanel() {
   function handleReset() {
     if (!USE_MOCKS) return;
     resetMockStore();
-    setStatuses({
-      legit: { scenario: "legit", status: "idle" },
-      blocked: { scenario: "blocked", status: "idle" },
-      overspend: { scenario: "overspend", status: "idle" },
-    });
+    setActive(null);
     qc.invalidateQueries({ queryKey: ["feed"] });
     toast({
       variant: "info",
@@ -190,8 +201,8 @@ export function DemoPanel() {
       title="Scenario console"
       subtitle={
         USE_MOCKS
-          ? "Trigger scripted runs — each scenario appends a new ledger entry in mock mode."
-          : "Runs on the live demo-control service using the connected wallet as the owner. Results post to the indexer and appear in the feed."
+          ? "Trigger scripted runs — each scenario plays in the theater and appends a ledger entry in mock mode."
+          : "Runs on the live demo-control service using the connected wallet as the owner. Theater visualizes intermediate beats; terminal frame mirrors the real outcome."
       }
       action={
         <div className="flex items-center gap-5">
@@ -209,12 +220,16 @@ export function DemoPanel() {
             <span className="text-text-secondary">
               {USE_MOCKS
                 ? "mock (in-browser)"
-                : (process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402")}
+                : (process.env.NEXT_PUBLIC_RUNTIME_API_URL ??
+                  "http://localhost:7402")}
             </span>
           </div>
           {!USE_MOCKS && address && (
             <div className="font-mono text-[11px] tnum text-text-tertiary">
-              owner · <span className="text-text-secondary">{truncateAddress(address, 6)}</span>
+              owner ·{" "}
+              <span className="text-text-secondary">
+                {truncateAddress(address, 6)}
+              </span>
             </div>
           )}
           {!USE_MOCKS && runtimeConfig && (
@@ -228,27 +243,44 @@ export function DemoPanel() {
         </div>
       }
     >
-      <div className="flex flex-col">
-        {SCENARIOS.map(({ id, seq, label, expected, description, variant }) => (
-          <ScenarioRow
-            key={id}
-            seq={seq}
-            label={label}
-            expected={expected}
-            description={description}
-            variant={variant}
-            status={statuses[id]}
-            onRun={() => void handleRun(id)}
+      {/* Scenario selector strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 hairline-bottom">
+        {SCENARIOS.map((s, i) => (
+          <ScenarioCard
+            key={s.id}
+            seq={s.seq}
+            label={s.label}
+            expected={s.expected}
+            description={s.description}
+            isActive={active?.scenario === s.id}
+            isRunning={active?.scenario === s.id && active.isRunning}
+            onSelect={() => void handleRun(s.id)}
+            variant={s.variant}
+            borderRight={i < SCENARIOS.length - 1}
           />
         ))}
       </div>
 
+      {/* Theater slot */}
+      {active ? (
+        <DemoRunTheater
+          key={active.runKey}
+          scenario={active.scenario}
+          runKey={active.runKey}
+          realResult={active.realResult}
+          onReplayRun={() => void handleRun(active.scenario)}
+        />
+      ) : (
+        <EmptyTheater />
+      )}
+
       <div className="hairline-top mt-4 pt-6 flex flex-col gap-2 text-[12px] text-text-tertiary leading-relaxed max-w-[62ch]">
-        <div className="eyebrow text-text-secondary">Demo-safe fallback</div>
+        <div className="eyebrow text-text-secondary">Theater notes</div>
         <p>
-          In mock mode, scenarios mutate an in-browser ledger so the story plays
-          end-to-end without running the agent service. Live mode calls
-          demo-control and waits for real receipts from the indexer.
+          Intermediate beats are theatrical — the terminal frame mirrors the
+          real result from {USE_MOCKS ? "the in-browser ledger" : "demo-control"}.
+          Pause or step to narrate; replay to re-play the theater without
+          re-running the backend.
         </p>
       </div>
     </Section>
@@ -261,104 +293,102 @@ function nextMockTxHash(): Hex {
   return `0x${value}` as Hex;
 }
 
-function ScenarioRow({
+function ScenarioCard({
   seq,
   label,
   expected,
   description,
+  isActive,
+  isRunning,
+  onSelect,
   variant,
-  status,
-  onRun,
+  borderRight,
 }: {
   seq: string;
   label: string;
   expected: string;
   description: string;
+  isActive: boolean;
+  isRunning: boolean;
+  onSelect: () => void;
   variant: "primary" | "danger" | "secondary";
-  status: DemoStatus;
-  onRun: () => void;
+  borderRight: boolean;
 }) {
-  const isRunning = status.status === "running";
+  const accent =
+    variant === "danger"
+      ? "var(--status-danger)"
+      : variant === "secondary"
+        ? "var(--status-warning)"
+        : "var(--accent-bright)";
   return (
-    <div className="grid grid-cols-[60px_1fr_auto] gap-x-6 items-start py-6 hairline-bottom border-rule-subtle">
-      <div className="font-mono text-[11px] tnum text-text-quat tracking-wider pt-2">
-        {seq}
-      </div>
-
-      <div className="flex flex-col gap-2 min-w-0">
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <h3
-            className="font-display font-semibold tracking-tight text-text-primary"
-            style={{ fontSize: "var(--t-md)" }}
-          >
-            {label}
-          </h3>
-          <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
-            expected: <span className="text-text-tertiary">{expected}</span>
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={isRunning}
+      className={`
+        group relative text-left flex flex-col gap-2 p-5
+        transition-colors duration-[--duration-fast]
+        hover:bg-bg-inset
+        disabled:opacity-80 disabled:cursor-wait
+        ${borderRight ? "md:border-r md:border-rule-subtle" : ""}
+        ${isActive ? "bg-bg-inset" : ""}
+      `}
+    >
+      {isActive && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-5 bottom-5 w-[2px]"
+          style={{ background: accent }}
+        />
+      )}
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
+          {seq}
+        </span>
+        {isRunning ? (
+          <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tnum tracking-wider uppercase text-accent-bright">
+            <span
+              aria-hidden
+              className="led-pulse block"
+              style={{ width: 5, height: 5, background: accent }}
+            />
+            running
           </span>
-        </div>
-        <p className="text-[12px] text-text-tertiary leading-relaxed max-w-[60ch]">
-          {description}
-        </p>
-
-        {isRunning && (
-          <div className="mt-3 flex items-center gap-3 font-mono text-[11px] tnum text-text-tertiary">
-            <span className="led-pulse h-1.5 w-1.5 rounded-full bg-accent" />
-            EXECUTING AGENT RUN…
-          </div>
-        )}
-
-        {status.status === "success" && (
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
-            {status.reasonCode ? (
-              <>
-                <StatusBadge variant="danger">Blocked</StatusBadge>
-                <span className="font-mono text-[11px] tnum text-text-secondary">
-                  reason · {status.reasonCode.replace(/_/g, " ").toLowerCase()}
-                </span>
-              </>
-            ) : status.receiptId ? (
-              <>
-                <StatusBadge variant="success">Executed</StatusBadge>
-                <Link
-                  href={`/receipt/${status.receiptId}`}
-                  className="font-mono text-[11px] tnum text-accent hover:text-accent-bright underline-offset-4 hover:underline"
-                >
-                  receipt · {truncateAddress(status.receiptId, 6)} →
-                </Link>
-                {status.txHash && !USE_MOCKS && (
-                  <a
-                    href={`https://sepolia.basescan.org/tx/${status.txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11px] tnum text-text-tertiary hover:text-text-primary underline-offset-4 hover:underline"
-                  >
-                    tx ↗
-                  </a>
-                )}
-              </>
-            ) : (
-              <StatusBadge variant="info">Completed</StatusBadge>
-            )}
-          </div>
-        )}
-
-        {status.status === "failed" && (
-          <div className="mt-3 text-[12px] text-danger font-mono tnum">
-            ✕ {status.error ?? "Scenario failed"}
-          </div>
+        ) : (
+          <span
+            className="font-mono text-[10.5px] tnum tracking-wider uppercase opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ color: accent }}
+          >
+            run →
+          </span>
         )}
       </div>
-
-      <Button
-        variant={variant}
-        size="md"
-        onClick={onRun}
-        loading={isRunning}
-        disabled={isRunning}
+      <h3
+        className="font-display font-semibold tracking-tight text-text-primary"
+        style={{ fontSize: "17px" }}
       >
-        {isRunning ? "Running…" : "Run scenario"}
-      </Button>
+        {label}
+      </h3>
+      <div className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
+        expected: <span className="text-text-tertiary">{expected}</span>
+      </div>
+      <p className="text-[12px] text-text-tertiary leading-relaxed">
+        {description}
+      </p>
+    </button>
+  );
+}
+
+function EmptyTheater() {
+  return (
+    <div className="hairline-top mt-0 py-14 flex flex-col items-center justify-center gap-3 text-center">
+      <span className="font-mono text-[10.5px] tnum tracking-[0.2em] uppercase text-text-quat">
+        theater idle
+      </span>
+      <p className="text-[13px] text-text-tertiary max-w-[46ch]">
+        Pick a scenario above to dispatch an agent run. The theater will play
+        each beat and settle on the real outcome.
+      </p>
     </div>
   );
 }

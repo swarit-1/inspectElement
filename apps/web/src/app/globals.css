@@ -273,3 +273,221 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ──────────────────────────────────────────────────
+   Landing-page only utilities (Awwwards revamp)
+   ────────────────────────────────────────────────── */
+
+/* Grain overlay — fixed, pointer-events-none, mix-blend */
+.grain-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 0.87  0 0 0 0 0.42  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 220px 220px;
+}
+
+/* Vignette — subtle gold-to-black in corners */
+.vignette-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 12% 8%, oklch(0.8 0.135 75 / 0.06), transparent 55%),
+    radial-gradient(ellipse at 90% 110%, oklch(0.25 0.03 75 / 0.35), transparent 60%);
+}
+
+/* Continuous marquee — translates -50% of a doubled strip */
+@keyframes marqueeX {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee-track {
+  animation: marqueeX 42s linear infinite;
+  will-change: transform;
+}
+.marquee-track-rev {
+  animation: marqueeX 42s linear infinite reverse;
+  will-change: transform;
+}
+
+/* Display-weight kinetic headline */
+.kinetic {
+  font-family: var(--font-display);
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  font-weight: 700;
+  font-size: clamp(56px, 12vw, 184px);
+}
+.kinetic-lg {
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  font-weight: 700;
+  font-size: clamp(40px, 7vw, 96px);
+}
+.kinetic-outline {
+  -webkit-text-stroke: 1px var(--text-quat);
+  color: transparent;
+}
+
+/* Scroll reveal (paired with IntersectionObserver in page.tsx) */
+[data-sr] {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity var(--duration-slow) var(--ease-out-expo),
+    transform var(--duration-slow) var(--ease-out-expo);
+}
+[data-sr].sr-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+[data-sr-stagger] > * {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition:
+    opacity 520ms var(--ease-out-expo),
+    transform 520ms var(--ease-out-expo);
+}
+[data-sr-stagger].sr-in > * {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+[data-sr-stagger].sr-in > *:nth-child(1) { transition-delay: 40ms; }
+[data-sr-stagger].sr-in > *:nth-child(2) { transition-delay: 120ms; }
+[data-sr-stagger].sr-in > *:nth-child(3) { transition-delay: 200ms; }
+[data-sr-stagger].sr-in > *:nth-child(4) { transition-delay: 280ms; }
+[data-sr-stagger].sr-in > *:nth-child(5) { transition-delay: 360ms; }
+[data-sr-stagger].sr-in > *:nth-child(6) { transition-delay: 440ms; }
+
+/* Breathing dot used on live ops console */
+@keyframes breath {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+.breath {
+  animation: breath 2.8s var(--ease-out-quart) infinite;
+}
+
+/* Shimmer sweep for money/status chips */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    oklch(0.8 0.135 75 / 0.14) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: sweep 3.2s var(--ease-out-quart) infinite;
+  animation-delay: 1s;
+  pointer-events: none;
+}
+
+/* Hairline-cross — corner crosshairs for framed elements */
+.crosshair::before,
+.crosshair::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+.crosshair::before {
+  top: -1px; left: -1px;
+  border-right: 0; border-bottom: 0;
+}
+.crosshair::after {
+  bottom: -1px; right: -1px;
+  border-left: 0; border-top: 0;
+}
+
+/* Scanline for trace windows */
+.scanlines {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      oklch(0.8 0.135 75 / 0.025) 2px,
+      oklch(0.8 0.135 75 / 0.025) 3px
+    );
+}
+
+/* Hover accent underline for links */
+.link-slide {
+  position: relative;
+  display: inline-flex;
+}
+.link-slide::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform-origin: right center;
+  transform: scaleX(0);
+  transition: transform 360ms var(--ease-out-expo);
+}
+.link-slide:hover::after {
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+/* Scroll cue */
+@keyframes scrollCue {
+  0%, 15% { transform: translateY(0); opacity: 1; }
+  60% { transform: translateY(14px); opacity: 0.3; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.scroll-cue-dot {
+  animation: scrollCue 2.4s var(--ease-out-quart) infinite;
+}
+
+/* Counterparty "file" tag — monospace chip with bracket */
+.file-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.file-tag b {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Responsive kinetic cap */
+@media (max-width: 640px) {
+  .kinetic { font-size: clamp(44px, 14vw, 80px); }
+  .kinetic-lg { font-size: clamp(32px, 9vw, 56px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .marquee-track-rev, .breath, .shimmer::after, .scroll-cue-dot {
+    animation: none !important;
+  }
+  [data-sr] { opacity: 1; transform: none; }
+  [data-sr-stagger] > * { opacity: 1; transform: none; }
+}
