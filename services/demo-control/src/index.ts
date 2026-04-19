@@ -12,18 +12,35 @@
 
 import express from "express";
 import { randomUUID } from "crypto";
+import { pathToFileURL } from "url";
 import {
   loadAgentEnv,
   runExecuteFlow,
   runPreflightOnlyFlow,
 } from "../../../agents/shared.js";
 import { resolveDemoPort } from "../../../packages/trace/src/index.js";
-import { createDemoStateStore } from "./state.js";
+import { createDemoStateStore, type DemoStateStore } from "./state.js";
 
 const PORT = resolveDemoPort();
-const demoState = createDemoStateStore();
 
-function main() {
+export interface DemoControlDependencies {
+  readonly loadAgentEnv?: typeof loadAgentEnv;
+  readonly runExecuteFlow?: typeof runExecuteFlow;
+  readonly runPreflightOnlyFlow?: typeof runPreflightOnlyFlow;
+  readonly demoState?: DemoStateStore;
+  readonly createScenarioId?: () => string;
+}
+
+export function createDemoControlApp(
+  dependencies: DemoControlDependencies = {}
+) {
+  const resolveEnv = dependencies.loadAgentEnv ?? loadAgentEnv;
+  const executeFlow = dependencies.runExecuteFlow ?? runExecuteFlow;
+  const preflightOnlyFlow =
+    dependencies.runPreflightOnlyFlow ?? runPreflightOnlyFlow;
+  const demoState = dependencies.demoState ?? createDemoStateStore();
+  const createScenarioId = dependencies.createScenarioId ?? randomUUID;
+
   const app = express();
   app.use(express.json());
 
@@ -44,15 +61,15 @@ function main() {
    * Triggers the legitimate 2 USDC payment agent.
    */
   app.post("/demo/run-legit", async (_req, res) => {
-    const scenarioId = randomUUID();
+    const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     // Run asynchronously — status polled via GET /demo/status
     try {
-      const env = loadAgentEnv();
-      const result = await runExecuteFlow("legit", env);
+      const env = resolveEnv();
+      const result = await executeFlow("legit", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
       demoState.finishRun(scenarioId, "failed", {
@@ -68,14 +85,14 @@ function main() {
    * Triggers the blocked attack agent (preflight only).
    */
   app.post("/demo/run-blocked", async (_req, res) => {
-    const scenarioId = randomUUID();
+    const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = loadAgentEnv();
-      const result = await runPreflightOnlyFlow(env);
+      const env = resolveEnv();
+      const result = await preflightOnlyFlow(env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
       demoState.finishRun(scenarioId, "failed", {
@@ -91,14 +108,14 @@ function main() {
    * Triggers the overspend agent (15 USDC, slash-only).
    */
   app.post("/demo/run-overspend", async (_req, res) => {
-    const scenarioId = randomUUID();
+    const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = loadAgentEnv();
-      const result = await runExecuteFlow("overspend", env);
+      const env = resolveEnv();
+      const result = await executeFlow("overspend", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
       demoState.finishRun(scenarioId, "failed", {
@@ -142,6 +159,14 @@ function main() {
     res.json({ status: "ok", lastRun: lastRun?.scenarioId ?? null });
   });
 
+  return app;
+}
+
+export function startDemoControlServer(
+  dependencies: DemoControlDependencies = {}
+) {
+  const app = createDemoControlApp(dependencies);
+
   app.listen(PORT, () => {
     console.log(`[demo-control] Listening on :${PORT}`);
     console.log("[demo-control] Endpoints:");
@@ -152,4 +177,12 @@ function main() {
   });
 }
 
-main();
+function isMainModule(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isMainModule()) {
+  startDemoControlServer();
+}
