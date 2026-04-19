@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { Shell } from "@/components/ui/shell";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { GeminiSummaryCard } from "@/components/gemini/gemini-summary-card";
 import { getFeed, postReviewerResolve } from "@/lib/api";
 import { USE_MOCKS, formatUsdc, truncateAddress } from "@/lib/constants";
+import { easeStage } from "@/lib/motion";
 import type { FeedItemChallenge } from "@/lib/types";
 
 export default function ReviewPage() {
@@ -29,11 +31,20 @@ export default function ReviewPage() {
   );
 }
 
+type FilterKey = "pending" | "resolved" | "all";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "pending", label: "Pending" },
+  { key: "resolved", label: "Resolved" },
+  { key: "all", label: "All" },
+];
+
 function ReviewContent() {
   const { address } = useAccount();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("pending");
 
   const { data: feed, isLoading, error } = useQuery({
     queryKey: ["feed-review", address],
@@ -42,11 +53,33 @@ function ReviewContent() {
     refetchInterval: 3000,
   });
 
-  const challenges =
-    feed?.filter((e): e is FeedItemChallenge => e.type === "challenge") ?? [];
-  const pending = challenges.filter(
-    (c) => c.status === "PENDING" || c.status === "FILED"
+  const challenges = useMemo(
+    () =>
+      feed?.filter(
+        (e): e is FeedItemChallenge => e.type === "challenge",
+      ) ?? [],
+    [feed],
   );
+
+  const counts = useMemo(() => {
+    const pending = challenges.filter(
+      (c) => c.status === "PENDING" || c.status === "FILED",
+    );
+    const resolved = challenges.filter(
+      (c) => c.status === "UPHELD" || c.status === "REJECTED",
+    );
+    return { pending, resolved, all: challenges };
+  }, [challenges]);
+
+  const visible = useMemo(() => {
+    const list =
+      filter === "pending"
+        ? counts.pending
+        : filter === "resolved"
+          ? counts.resolved
+          : counts.all;
+    return [...list].sort((a, b) => b.timestamp - a.timestamp);
+  }, [counts, filter]);
 
   async function handleDecision(challengeId: string, uphold: boolean) {
     setBusyId(challengeId);
@@ -77,19 +110,89 @@ function ReviewContent() {
 
   return (
     <div className="flex flex-col gap-10">
-      <Section
-        kicker="Reviewer"
-        title="Arbitration queue"
-        subtitle={
-          USE_MOCKS
-            ? "Stub mode — decisions post to local state only."
-            : "Decisions post to Dev 3 /v1/reviewer/resolve (assistive; not on the live slash path)."
-        }
-        action={
-          <div className="font-mono text-[11px] tnum text-text-tertiary">
-            {pending.length} pending · {challenges.length} total
+      <motion.header
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.46, ease: easeStage }}
+        className="flex flex-col gap-5"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <span className="eyebrow">Arbiter · triage queue</span>
+            <h1
+              className="font-display font-semibold tracking-tight text-text-primary mt-2 leading-[1.02]"
+              style={{ fontSize: "var(--t-2xl)", letterSpacing: "-0.025em" }}
+            >
+              Resolve open disputes.
+            </h1>
+            <p className="text-text-secondary mt-2 max-w-[60ch]">
+              {USE_MOCKS
+                ? "Stub mode — decisions post to local state only."
+                : "Decisions post to the reviewer endpoint (assistive; not on the live slash path)."}
+            </p>
           </div>
+          <div className="flex items-center gap-3 font-mono text-[11px] tnum text-text-tertiary">
+            <span className="text-info">
+              ◆ {counts.pending.length} pending
+            </span>
+            <span className="text-text-quat">·</span>
+            <span className="text-success">
+              ● {counts.resolved.length} resolved
+            </span>
+          </div>
+        </div>
+
+        <nav
+          role="tablist"
+          aria-label="Filter challenges"
+          className="relative flex items-center gap-1 border-b border-rule"
+        >
+          {FILTERS.map((f) => {
+            const isActive = f.key === filter;
+            const count = counts[f.key].length;
+            return (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(f.key)}
+                className={`relative px-4 py-3 font-mono text-[11px] tnum tracking-[0.2em] uppercase transition-colors ${
+                  isActive
+                    ? "text-text-primary"
+                    : "text-text-tertiary hover:text-text-secondary"
+                }`}
+              >
+                <span>{f.label}</span>
+                <span
+                  className={`ml-2 ${
+                    isActive ? "text-accent" : "text-text-quat"
+                  }`}
+                >
+                  {count.toString().padStart(2, "0")}
+                </span>
+                {isActive && (
+                  <motion.span
+                    layoutId="review-filter-underline"
+                    className="absolute -bottom-px left-0 right-0 h-px bg-accent"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </motion.header>
+
+      <Section
+        kicker="Queue"
+        title={
+          filter === "pending"
+            ? "Pending challenges"
+            : filter === "resolved"
+              ? "Resolved challenges"
+              : "All challenges"
         }
+        subtitle="Each row is a bonded dispute against an agent receipt — uphold to slash operator stake and refund the owner."
       >
         {isLoading && <LoadingPulse label="LOADING QUEUE" />}
 
@@ -112,19 +215,36 @@ function ReviewContent() {
           />
         )}
 
-        {!isLoading && !error && challenges.length === 0 && (
+        {!isLoading && !error && visible.length === 0 && (
           <EmptyState
             glyph="○"
-            caption="QUEUE EMPTY"
-            headline="No challenges filed."
-            body="When an owner files a challenge against an overspend receipt, it appears here for arbiter review."
-            primary={{ label: "Run overspend scenario", href: "/demo" }}
+            caption={
+              filter === "pending"
+                ? "NOTHING TO REVIEW"
+                : filter === "resolved"
+                  ? "NO RESOLUTIONS YET"
+                  : "QUEUE EMPTY"
+            }
+            headline={
+              filter === "pending"
+                ? "Inbox zero."
+                : filter === "resolved"
+                  ? "Nothing has been decided yet."
+                  : "No challenges filed."
+            }
+            body={
+              filter === "pending"
+                ? "Every filed challenge has been resolved. File one from an overspend receipt to populate this queue."
+                : filter === "resolved"
+                  ? "Resolutions appear here once the arbiter issues a decision."
+                  : "When an owner files a challenge against an overspend receipt, it appears here."
+            }
+            primary={{ label: "Run overspend scenario", href: "/theater" }}
           />
         )}
 
-        {challenges.length > 0 && (
+        {visible.length > 0 && (
           <div className="flex flex-col">
-            {/* Header row */}
             <div className="hidden md:grid grid-cols-[80px_1fr_120px_120px_140px_auto] gap-x-5 px-4 -mx-4 pb-2 border-b border-rule">
               <span className="eyebrow">ID</span>
               <span className="eyebrow">Receipt</span>
@@ -134,14 +254,24 @@ function ReviewContent() {
               <span className="eyebrow text-right">Decision</span>
             </div>
 
-            {challenges.map((item) => (
-              <ReviewRow
-                key={item.id}
-                item={item}
-                busy={busyId === item.challengeId}
-                onDecision={handleDecision}
-              />
-            ))}
+            <AnimatePresence initial={false} mode="popLayout">
+              {visible.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.28, ease: easeStage }}
+                >
+                  <ReviewRow
+                    item={item}
+                    busy={busyId === item.challengeId}
+                    onDecision={handleDecision}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </Section>

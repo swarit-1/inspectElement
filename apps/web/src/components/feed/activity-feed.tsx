@@ -68,7 +68,7 @@ export function ActivityFeed() {
             caption="NO EVENTS YET"
             headline="The ledger is clean."
             body="Once an agent attempts a payment, you'll see receipts (allowed spends), blocked attempts (guard rejected), and challenges (disputes) appear here in order."
-            primary={{ label: "Run a scripted scenario", href: "/demo" }}
+            primary={{ label: "Run a scripted scenario", href: "/theater" }}
           />
         )}
 

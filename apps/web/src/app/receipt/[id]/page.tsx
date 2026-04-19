@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Shell } from "@/components/ui/shell";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +12,8 @@ import { LoadingPulse } from "@/components/ui/loading";
 import { ChallengeCTA } from "@/components/challenge/challenge-cta";
 import { ChallengeStatus } from "@/components/challenge/challenge-status";
 import { GeminiSummaryCard } from "@/components/gemini/gemini-summary-card";
+import { DeltaViz } from "@/components/receipt/delta-viz";
+import { easeStage } from "@/lib/motion";
 import { getReceipt, NotFoundError } from "@/lib/api";
 import {
   formatUsdc,
@@ -68,7 +71,7 @@ export default function ReceiptPage() {
               </>
             }
             primary={{ label: "Open activity feed", href: "/dashboard" }}
-            secondary={{ label: "Run a scenario", href: "/demo" }}
+            secondary={{ label: "Run a scenario", href: "/theater" }}
           />
         )}
 
@@ -95,7 +98,12 @@ export default function ReceiptPage() {
         {receipt && (
           <>
             {/* ── Hero: amount-first ── */}
-            <header className="flex flex-col gap-5">
+            <motion.header
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.48, ease: easeStage }}
+              className="flex flex-col gap-5"
+            >
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="seq tabular-nums">
                   RECEIPT · {truncateAddress(receipt.receiptId, 4)}
@@ -151,7 +159,11 @@ export default function ReceiptPage() {
                   </div>
                 )}
               </div>
-            </header>
+            </motion.header>
+
+            {receipt.status === "overspend" && (
+              <DeltaViz amount={receipt.amount} />
+            )}
 
             {/* ── Receipt details — definition list, no card ── */}
             <section className="grid grid-cols-[180px_1fr] gap-y-3 gap-x-8 hairline-top hairline-bottom py-6">

@@ -28,21 +28,16 @@ export function Providers({ children }: ProvidersProps) {
       })
   );
 
+  /**
+   * When PRIVY_APP_ID is missing, we still render the app shell — the
+   * `/login` route handles the configuration-missing state editorially and
+   * `WalletGate` uses the same fallback on gated surfaces.
+   */
   if (!PRIVY_APP_ID) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 text-center text-sm text-text-secondary">
-        <p>
-          Set{" "}
-          <span className="font-mono text-text-primary">
-            NEXT_PUBLIC_PRIVY_APP_ID
-          </span>{" "}
-          in{" "}
-          <span className="font-mono text-text-primary">.env.local</span> (from
-          the Privy dashboard) to enable sign-in and wallet linking. See{" "}
-          <span className="font-mono text-text-primary">apps/web/PRIVY_SETUP.md</span>{" "}
-          for current doc links.
-        </p>
-      </div>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>{children}</ToastProvider>
+      </QueryClientProvider>
     );
   }
 
