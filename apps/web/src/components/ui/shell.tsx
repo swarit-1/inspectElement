@@ -99,14 +99,15 @@ export function Shell({ children }: ShellProps) {
         {/* Brand stamp */}
         <div className="px-6 pt-7 pb-5">
           <Link
-            href="/dashboard"
+            href="/"
             className="block group"
             onClick={() => setMobileNavOpen(false)}
+            aria-label="Back to landing page"
           >
             <div className="flex items-baseline gap-1.5">
               <VaultMark />
               <span
-                className="font-display font-semibold tracking-tight text-accent leading-none"
+                className="font-display font-semibold tracking-tight text-accent leading-none transition-opacity group-hover:opacity-80"
                 style={{ fontSize: "var(--t-md)" }}
               >
                 VAULT
@@ -182,6 +183,16 @@ export function Shell({ children }: ShellProps) {
 
         {/* Footer — deployment stamp */}
         <div className="mt-auto px-6 py-5 border-t border-rule-subtle">
+          <Link
+            href="/"
+            onClick={() => setMobileNavOpen(false)}
+            className="group mb-4 flex items-center gap-2 font-mono text-[11px] tnum tracking-wider uppercase text-text-quat transition-colors hover:text-text-secondary"
+          >
+            <span aria-hidden className="transition-transform group-hover:-translate-x-0.5">
+              ←
+            </span>
+            <span>Back to landing</span>
+          </Link>
           <div className="flex items-center gap-2 mb-3">
             <span
               className="led-pulse h-1.5 w-1.5 rounded-full bg-success"
