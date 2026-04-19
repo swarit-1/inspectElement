@@ -11,6 +11,7 @@ import { WalletGate } from "@/components/ui/wallet-gate";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingPulse } from "@/components/ui/loading";
 import { useToast } from "@/components/ui/toast";
+import { GeminiSummaryCard } from "@/components/gemini/gemini-summary-card";
 import { getFeed, postReviewerResolve } from "@/lib/api";
 import { USE_MOCKS, formatUsdc, truncateAddress } from "@/lib/constants";
 import type { FeedItemChallenge } from "@/lib/types";
@@ -157,65 +158,77 @@ function ReviewRow({
   busy: boolean;
   onDecision: (id: string, uphold: boolean) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const isPending = item.status === "FILED" || item.status === "PENDING";
   return (
-    <div className="grid grid-cols-[80px_1fr_auto] md:grid-cols-[80px_1fr_120px_120px_140px_auto] gap-x-5 gap-y-1 items-center py-3.5 px-4 -mx-4 border-b border-rule-subtle hover:bg-bg-surface transition-colors duration-[--duration-fast]">
-      <span className="font-mono text-[12px] tnum text-text-secondary">
-        #{item.challengeId}
-      </span>
-      <span className="font-mono text-[12px] tnum text-text-tertiary truncate min-w-0">
-        {truncateAddress(item.receiptId, 6)}{" "}
-        <span className="text-text-quat">· {item.challengeType}</span>
-      </span>
-      <span className="hidden md:block font-mono text-[12px] tnum text-right text-text-secondary">
-        {item.payoutAmount ? `${formatUsdc(item.payoutAmount)}` : "—"}
-      </span>
-      <span className="hidden md:block">
-        <StatusBadge
-          variant={
-            item.status === "UPHELD"
-              ? "success"
-              : item.status === "REJECTED"
-                ? "danger"
-                : "info"
-          }
-        >
-          {isPending ? "Pending" : item.status}
-        </StatusBadge>
-      </span>
-      <span className="hidden md:block font-mono text-[11px] tnum text-text-tertiary">
-        {new Date(item.timestamp * 1000).toLocaleString(undefined, {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </span>
+    <div className="border-b border-rule-subtle">
+      <div
+        className="grid grid-cols-[80px_1fr_auto] md:grid-cols-[80px_1fr_120px_120px_140px_auto] gap-x-5 gap-y-1 items-center py-3.5 px-4 -mx-4 hover:bg-bg-surface transition-colors duration-[--duration-fast] cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="font-mono text-[12px] tnum text-text-secondary">
+          #{item.challengeId}
+        </span>
+        <span className="font-mono text-[12px] tnum text-text-tertiary truncate min-w-0">
+          {truncateAddress(item.receiptId, 6)}{" "}
+          <span className="text-text-quat">· {item.challengeType}</span>
+        </span>
+        <span className="hidden md:block font-mono text-[12px] tnum text-right text-text-secondary">
+          {item.payoutAmount ? `${formatUsdc(item.payoutAmount)}` : "—"}
+        </span>
+        <span className="hidden md:block">
+          <StatusBadge
+            variant={
+              item.status === "UPHELD"
+                ? "success"
+                : item.status === "REJECTED"
+                  ? "danger"
+                  : "info"
+            }
+          >
+            {isPending ? "Pending" : item.status}
+          </StatusBadge>
+        </span>
+        <span className="hidden md:block font-mono text-[11px] tnum text-text-tertiary">
+          {new Date(item.timestamp * 1000).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
 
-      <div className="flex items-center gap-2 justify-end">
-        {isPending ? (
-          <>
-            <Button
-              variant="primary"
-              size="sm"
-              loading={busy}
-              onClick={() => void onDecision(item.challengeId, true)}
-            >
-              Uphold
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() => void onDecision(item.challengeId, false)}
-            >
-              Reject
-            </Button>
-          </>
-        ) : (
-          <span className="font-mono text-[11px] tnum text-text-quat">closed</span>
-        )}
+        <div className="flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+          {isPending ? (
+            <>
+              <Button
+                variant="primary"
+                size="sm"
+                loading={busy}
+                onClick={() => void onDecision(item.challengeId, true)}
+              >
+                Uphold
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() => void onDecision(item.challengeId, false)}
+              >
+                Reject
+              </Button>
+            </>
+          ) : (
+            <span className="font-mono text-[11px] tnum text-text-quat">closed</span>
+          )}
+        </div>
       </div>
+
+      {expanded && (
+        <div className="px-4 -mx-4 pb-4 pt-1">
+          <GeminiSummaryCard kind="challenge" referenceId={item.challengeId} />
+        </div>
+      )}
     </div>
   );
 }

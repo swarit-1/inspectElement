@@ -484,6 +484,163 @@ function normalizeChallengeDetail(raw: unknown): ChallengeDetail {
   };
 }
 
+// ── Gemini advisory endpoints ──
+
+export interface ScreenResponse {
+  injectionScore: number;
+  severity: "low" | "medium" | "high" | "critical";
+  signals: string[];
+  explanation: string;
+  recommendedAction: "allow" | "review" | "block";
+  model: string;
+  advisoryOnly: boolean;
+  hardModeTriggered?: boolean;
+}
+
+export interface SummaryResponse {
+  headline: string;
+  summaryBullets: string[];
+  riskAssessment: string;
+  whyItWasAllowedOrBlocked: string;
+  recommendedReviewerFocus: string[];
+  advisoryOnly: boolean;
+  model: string;
+}
+
+export async function screenTrace(body: {
+  trace: unknown;
+  contextDigest: string;
+  owner: string;
+  agentId: string;
+  proposedAction: string;
+  intentConfig?: Record<string, unknown>;
+}): Promise<ScreenResponse> {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/screen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }, "infra");
+  if (!res.ok) throw new Error(`Screen failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getReceiptSummary(receiptId: string): Promise<SummaryResponse> {
+  const res = await fetchWithHelpfulErrors(
+    `${INFRA_API_BASE}/v1/receipts/${receiptId}/summary`,
+    undefined,
+    "infra",
+  );
+  if (!res.ok) throw new Error(`Receipt summary failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getChallengeSummary(challengeId: string): Promise<SummaryResponse> {
+  const res = await fetchWithHelpfulErrors(
+    `${INFRA_API_BASE}/v1/challenges/${challengeId}/summary`,
+    undefined,
+    "infra",
+  );
+  if (!res.ok) throw new Error(`Challenge summary failed: ${res.status}`);
+  return res.json();
+}
+
+// ── Real execution API ──
+
+export interface ExecutionPreflightResult {
+  status: "allowed" | "blocked";
+  contextDigest: string;
+  deterministicChecks: { passed: boolean; reasons: string[] };
+  advisoryScreen: ScreenResponse;
+  blockReasons: string[];
+}
+
+export interface ExecutionResult {
+  executionId: string;
+  status: "allowed" | "blocked";
+  contextDigest: string;
+  blockReasons?: string[];
+  advisoryScreen?: ScreenResponse;
+}
+
+export async function preflightExecution(body: {
+  owner: string;
+  agentId: string;
+  proposedAction: string;
+  trace: unknown;
+  target?: string;
+  token?: string;
+  amount?: string;
+  intentHash?: string;
+}): Promise<ExecutionPreflightResult> {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/executions/preflight`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }, "infra");
+  if (!res.ok) throw new Error(`Preflight failed: ${res.status}`);
+  return res.json();
+}
+
+export async function submitExecution(body: {
+  owner: string;
+  agentId: string;
+  proposedAction: string;
+  trace: unknown;
+  target?: string;
+  token?: string;
+  amount?: string;
+  intentHash?: string;
+}): Promise<ExecutionResult> {
+  const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/executions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }, "infra");
+  if (!res.ok) throw new Error(`Execution submit failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getExecutionStatus(id: string): Promise<ExecutionResult & { proposedAction: string; createdAt: number; updatedAt: number }> {
+  const res = await fetchWithHelpfulErrors(
+    `${INFRA_API_BASE}/v1/executions/${id}`,
+    undefined,
+    "infra",
+  );
+  if (!res.ok) throw new Error(`Execution status failed: ${res.status}`);
+  return res.json();
+}
+
+// ── SSE live updates ──
+
+export function subscribeToEvents(
+  owner: Address,
+  onEvent: (event: { type: string; data: Record<string, unknown> }) => void,
+): () => void {
+  const url = `${INFRA_API_BASE}/v1/events?owner=${owner}`;
+  const source = new EventSource(url);
+
+  const eventTypes = [
+    "receipt.created",
+    "attempt.blocked",
+    "challenge.filed",
+    "challenge.resolved",
+    "summary.ready",
+  ];
+
+  for (const type of eventTypes) {
+    source.addEventListener(type, (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        onEvent({ type, data });
+      } catch {
+        // ignore parse errors
+      }
+    });
+  }
+
+  return () => source.close();
+}
+
 // ── Mock state (client-side only, for demo) ──
 
 let mockDemoOverride: Partial<DemoStatus> = {};

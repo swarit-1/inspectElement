@@ -14,6 +14,10 @@ import { createManifestsRouter } from "./manifests.js";
 import { createReplayRouter } from "./replay.js";
 import { createReviewerRouter } from "./reviewer.js";
 import { createTracesRouter } from "./traces.js";
+import { createScreenRouter } from "../gemini/screen.js";
+import { createReceiptSummaryRouter, createChallengeSummaryRouter } from "../gemini/summarize.js";
+import { createExecutionsRouter } from "./executions.js";
+import { createSSERouter } from "./sse.js";
 
 export function createApp(): Express {
   const env = loadEnv();
@@ -43,6 +47,11 @@ export function createApp(): Express {
   app.use("/v1/challenges", createChallengePrepareRouter());
   app.use("/v1/reviewer", createReviewerRouter());
   app.use("/v1/replay", createReplayRouter());
+  app.use("/v1/screen", createScreenRouter());
+  app.use("/v1/receipts/:receiptId/summary", createReceiptSummaryRouter());
+  app.use("/v1/challenges/:challengeId/summary", createChallengeSummaryRouter());
+  app.use("/v1/executions", createExecutionsRouter());
+  app.use("/v1/events", createSSERouter());
   app.use("/ipfs", createLocalCasRouter());
 
   app.use((req, res) => {

@@ -5,8 +5,9 @@ import { useAccount } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { Section } from "@/components/ui/section";
 import { useToast } from "@/components/ui/toast";
-import { runDemoScenario, waitForDemoScenario } from "@/lib/api";
+import { runDemoScenario, waitForDemoScenario, screenTrace as apiScreenTrace, type ScreenResponse } from "@/lib/api";
 import { useDemoRuntimeConfig } from "@/hooks/use-demo-runtime-config";
+import { GeminiScreenPanel } from "@/components/gemini/gemini-screen-panel";
 import { appendScenarioToFeed, resetMockStore } from "@/mocks/mock-store";
 import { USE_MOCKS, truncateAddress } from "@/lib/constants";
 import type { DemoScenario, DemoStatus } from "@/lib/types";
@@ -65,6 +66,34 @@ export function DemoPanel() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [active, setActive] = useState<ActiveRun | null>(null);
+  const [screenResult, setScreenResult] = useState<ScreenResponse | null>(null);
+  const [screenLoading, setScreenLoading] = useState(false);
+
+  async function runAdvisoryScreen(scenario: DemoScenario) {
+    if (USE_MOCKS) {
+      setScreenLoading(false);
+      return;
+    }
+    try {
+      const dummyTrace = {
+        scenario,
+        action: scenario === "legit" ? "pay_merchant" : scenario === "blocked" ? "pay_attacker" : "overspend_merchant",
+        timestamp: Date.now(),
+      };
+      const result = await apiScreenTrace({
+        trace: dummyTrace,
+        contextDigest: "0x" + "0".repeat(64),
+        owner: address ?? "0x" + "0".repeat(40),
+        agentId: runtimeConfig?.agentId ?? "0x" + "0".repeat(64),
+        proposedAction: scenario === "legit" ? "Pay 2 USDC to merchant" : scenario === "blocked" ? "Pay 20 USDC to attacker" : "Pay 15 USDC to merchant (exceeds cap)",
+      });
+      setScreenResult(result);
+    } catch {
+      // Screen failure is non-blocking
+    } finally {
+      setScreenLoading(false);
+    }
+  }
 
   async function handleRun(scenario: DemoScenario) {
     if (!address && !USE_MOCKS) {
@@ -78,6 +107,8 @@ export function DemoPanel() {
 
     const runKey = Date.now();
     setActive({ scenario, runKey, isRunning: true, realResult: null });
+    setScreenResult(null);
+    setScreenLoading(true);
 
     try {
       if (USE_MOCKS) {
@@ -104,6 +135,7 @@ export function DemoPanel() {
             : prev,
         );
         qc.invalidateQueries({ queryKey: ["feed"] });
+        void runAdvisoryScreen(scenario);
         toast({
           variant:
             scenario === "blocked"
@@ -142,6 +174,7 @@ export function DemoPanel() {
           : prev,
       );
       qc.invalidateQueries({ queryKey: ["feed"] });
+      void runAdvisoryScreen(scenario);
       if (result.status === "success") {
         toast({
           variant:
@@ -272,6 +305,13 @@ export function DemoPanel() {
         />
       ) : (
         <EmptyTheater />
+      )}
+
+      {/* Gemini advisory screen panel */}
+      {(screenResult || screenLoading) && (
+        <div className="mt-4">
+          <GeminiScreenPanel screen={screenResult} isLoading={screenLoading} />
+        </div>
       )}
 
       <div className="hairline-top mt-4 pt-6 flex flex-col gap-2 text-[12px] text-text-tertiary leading-relaxed max-w-[62ch]">
