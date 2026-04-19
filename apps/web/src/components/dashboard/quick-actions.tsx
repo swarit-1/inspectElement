@@ -6,8 +6,8 @@ import { easeStage } from "@/lib/motion";
 
 const ACTIONS = [
   {
-    label: "Run theater",
-    hint: "Play all 3 scenarios end-to-end.",
+    label: "Open live runs",
+    hint: "Watch the guard decide end-to-end.",
     href: "/theater",
     glyph: "▷",
   },

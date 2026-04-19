@@ -18,7 +18,7 @@ interface ShellProps {
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", seq: "01" },
-  { href: "/theater", label: "Theater", seq: "02" },
+  { href: "/theater", label: "Live runs", seq: "02" },
   { href: "/review", label: "Review", seq: "03" },
 ] as const;
 
@@ -114,7 +114,7 @@ export function Shell({ children }: ShellProps) {
               </span>
             </div>
             <span className="eyebrow mt-2 block text-text-quat">
-              Agent guard · v0.1{USE_MOCKS && <span className="text-accent"> · MOCK</span>}
+              Agent guard · v0.1{USE_MOCKS && <span className="text-accent"> · PREVIEW</span>}
             </span>
           </Link>
         </div>

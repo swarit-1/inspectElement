@@ -66,12 +66,12 @@ export default function ReceiptPage() {
                 <code className="font-mono text-text-secondary break-all">
                   {receiptId || "(empty)"}
                 </code>
-                . It may have been pruned, or the id may be malformed. If you
-                just ran a scenario, give the indexer a moment to catch up.
+                . It may have been pruned, or the id may be malformed. If the
+                run just landed, give the indexer a moment to catch up.
               </>
             }
             primary={{ label: "Open activity feed", href: "/dashboard" }}
-            secondary={{ label: "Run a scenario", href: "/theater" }}
+            secondary={{ label: "Open live runs", href: "/theater" }}
           />
         )}
 
@@ -83,7 +83,7 @@ export default function ReceiptPage() {
             body={
               <>
                 {USE_MOCKS
-                  ? "Mock store rejected the lookup."
+                  ? "The in-browser ledger rejected the lookup."
                   : "Could not reach the indexer."}
                 {" "}
                 <span className="text-danger font-mono text-[12px]">

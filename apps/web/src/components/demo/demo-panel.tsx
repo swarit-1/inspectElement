@@ -100,7 +100,7 @@ export function DemoPanel() {
       toast({
         variant: "warning",
         title: "Wallet required",
-        description: "Connect the owner wallet before running a live scenario.",
+        description: "Connect the owner wallet before dispatching an agent action.",
       });
       return;
     }
@@ -196,7 +196,7 @@ export function DemoPanel() {
       } else if (result.status === "failed") {
         toast({
           variant: "danger",
-          title: "Scenario failed",
+          title: "Run failed",
           description: result.error ?? "Unknown error",
         });
       }
@@ -210,7 +210,7 @@ export function DemoPanel() {
       );
       toast({
         variant: "danger",
-        title: "Scenario failed",
+        title: "Run failed",
         description: message,
       });
     }
@@ -223,19 +223,19 @@ export function DemoPanel() {
     qc.invalidateQueries({ queryKey: ["feed"] });
     toast({
       variant: "info",
-      title: "Demo state reset",
-      description: "Ledger cleared back to fixtures.",
+      title: "Ledger reset",
+      description: "Ledger cleared back to its starting state.",
     });
   }
 
   return (
     <Section
       kicker="Test bench"
-      title="Scenario console"
+      title="Agent action console"
       subtitle={
         USE_MOCKS
-          ? "Trigger scripted runs — each scenario plays in the theater and appends a ledger entry in mock mode."
-          : "Runs on the live demo-control service using the connected wallet as the owner. Theater visualizes intermediate beats; terminal frame mirrors the real outcome."
+          ? "Dispatch an agent action. Each run plays through the guard and appends a ledger entry in preview mode."
+          : "Runs against the live guard using the connected wallet as owner. The visual beats trace the agent path; the terminal frame mirrors the real outcome."
       }
       action={
         <div className="flex items-center gap-5">
@@ -245,14 +245,14 @@ export function DemoPanel() {
               onClick={handleReset}
               className="font-mono text-[11px] tnum tracking-wider uppercase text-text-tertiary hover:text-accent underline-offset-4 hover:underline"
             >
-              ↻ Reset demo
+              ↻ Reset ledger
             </button>
           )}
           <div className="font-mono text-[11px] tnum text-text-tertiary">
             runtime ·{" "}
             <span className="text-text-secondary">
               {USE_MOCKS
-                ? "mock (in-browser)"
+                ? "in-browser"
                 : (process.env.NEXT_PUBLIC_RUNTIME_API_URL ??
                   "http://localhost:7402")}
             </span>
@@ -315,12 +315,12 @@ export function DemoPanel() {
       )}
 
       <div className="hairline-top mt-4 pt-6 flex flex-col gap-2 text-[12px] text-text-tertiary leading-relaxed max-w-[62ch]">
-        <div className="eyebrow text-text-secondary">Theater notes</div>
+        <div className="eyebrow text-text-secondary">Run notes</div>
         <p>
-          Intermediate beats are theatrical — the terminal frame mirrors the
-          real result from {USE_MOCKS ? "the in-browser ledger" : "demo-control"}.
-          Pause or step to narrate; replay to re-play the theater without
-          re-running the backend.
+          The visual beats animate the agent path; the terminal frame reflects
+          the real result from{" "}
+          {USE_MOCKS ? "the in-browser ledger" : "the guard"}. Pause or step to
+          narrate; replay to re-watch the run without re-dispatching it.
         </p>
       </div>
     </Section>
@@ -423,11 +423,11 @@ function EmptyTheater() {
   return (
     <div className="hairline-top mt-0 py-14 flex flex-col items-center justify-center gap-3 text-center">
       <span className="font-mono text-[10.5px] tnum tracking-[0.2em] uppercase text-text-quat">
-        theater idle
+        ready
       </span>
       <p className="text-[13px] text-text-tertiary max-w-[46ch]">
-        Pick a scenario above to dispatch an agent run. The theater will play
-        each beat and settle on the real outcome.
+        Pick an action above to dispatch an agent run. The view will trace each
+        beat and settle on the real outcome.
       </p>
     </div>
   );

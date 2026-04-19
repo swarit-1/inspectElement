@@ -275,20 +275,20 @@ export function resolveTerminal(
       return {
         kind: "blocked",
         title: "Awaiting denial",
-        detail: "Scripted outcome pending confirmation.",
+        detail: "Expected outcome pending confirmation.",
       };
     }
     return {
       kind: scenario === "overspend" ? "overspend" : "success",
       title: "Awaiting confirmation",
-      detail: "Scripted outcome pending receipt.",
+      detail: "Expected outcome pending receipt.",
     };
   }
 
   if (realResult.status === "failed") {
     return {
       kind: "failed",
-      title: "Scenario failed",
+      title: "Run failed",
       detail: realResult.error ?? "Unknown error from runtime.",
       cta: "retry",
     };

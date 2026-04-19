@@ -58,7 +58,7 @@ export function AgentDelegate({ onDelegated }: AgentDelegateProps) {
         onDelegated();
         toast({
           variant: "success",
-          title: "Delegate authorized (mock)",
+          title: "Delegate authorized",
           description: `Agent key linked to ${truncateAddress(delegate, 6)}.`,
         });
       }, 900);
@@ -211,7 +211,7 @@ export function AgentDelegate({ onDelegated }: AgentDelegateProps) {
             </p>
           )}
           {!USE_MOCKS && isRuntimeConfigLoading && (
-            <p>Loading operator and agent defaults from demo-control…</p>
+            <p>Loading operator and agent defaults from the runtime…</p>
           )}
           {!USE_MOCKS && runtimeConfigError && (
             <p>

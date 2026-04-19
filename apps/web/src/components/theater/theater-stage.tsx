@@ -270,7 +270,7 @@ function StageImpl({ scenario, phase, isTerminal, isHolding, realResult }: Props
       {/* Terminal stamp */}
       <div className="mt-4 flex items-center justify-between">
         <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
-          scenario · {scenario}
+          action · {scenario}
         </span>
         <TerminalStamp
           isTerminal={isTerminal}

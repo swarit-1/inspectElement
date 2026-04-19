@@ -21,7 +21,7 @@ export function LandingFooter() {
           aria-label="Footer navigation"
         >
           <FooterLink href="/dashboard" label="Dashboard" seq="01" />
-          <FooterLink href="/theater" label="Theater" seq="02" />
+          <FooterLink href="/theater" label="Live runs" seq="02" />
           <FooterLink href="/review" label="Review" seq="03" />
         </nav>
 

@@ -82,7 +82,7 @@ export function OwnerSpendApproval({
         setStep("confirmed");
         toast({
           variant: "success",
-          title: "Stablecoin allowance live (mock)",
+          title: "Stablecoin allowance live",
           description: `GuardedExecutor may spend up to ${formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD.`,
         });
       }, 900);
@@ -148,7 +148,7 @@ export function OwnerSpendApproval({
     <Section
       kicker="Step II · Spending Rail"
       title="Approve owner stablecoin"
-      subtitle="Let GuardedExecutor pull up to the daily cap from this wallet during live demo runs"
+      subtitle="Let GuardedExecutor pull up to the daily cap from this wallet during agent runs"
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-6 max-w-[820px]">
         <div className="flex flex-col gap-5">
@@ -232,8 +232,8 @@ export function OwnerSpendApproval({
             owner wallet when the server wallet submits a guarded payment.
           </p>
           <p>
-            The approval is capped at the demo&apos;s daily limit, so the live
-            runtime cannot pull more than {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD
+            The approval is capped at the daily policy limit, so the runtime
+            cannot pull more than {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USD
             without a fresh signature.
           </p>
         </aside>

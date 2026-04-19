@@ -54,7 +54,7 @@ const STEP_CAPTIONS: Record<OnboardingStepId, string> = {
   network: "Base Sepolia is the only supported chain.",
   policy: "Pin an intent manifest and commit it on-chain.",
   delegate: "Authorize an agent key, approve the spend allowance.",
-  "first-run": "Watch the first scenario run end-to-end.",
+  "first-run": "Dispatch a first agent action end-to-end.",
 };
 
 export function OnboardingWizard() {
@@ -528,7 +528,7 @@ function StepFirstRun({
     <StepShell
       kicker="Step 05"
       title="Run the loop end-to-end."
-      body="The theater plays three scripted scenarios so you can verify the policy, guard, and receipt path behave exactly like the spec. Mark it seen to finish onboarding."
+      body="Send a few agent actions through the guard so you can verify the policy, guard, and receipt path behave exactly like the spec. Mark it seen to finish onboarding."
     >
       <div className="flex flex-col gap-6">
         <div className="grid md:grid-cols-3 gap-0 hairline-top hairline-bottom">
@@ -556,7 +556,7 @@ function StepFirstRun({
             href="/theater"
             className="inline-flex items-center gap-2 font-mono text-[12px] tnum tracking-wider uppercase text-accent hover:text-accent-bright underline-offset-4 hover:underline"
           >
-            open theater →
+            open live runs →
           </Link>
           <Button
             size="md"

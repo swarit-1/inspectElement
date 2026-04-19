@@ -28,8 +28,8 @@ const STEP_COPY: Record<OnboardingStepId, { title: string; body: string }> = {
     body: "Authorize the agent to act on-chain under your committed policy.",
   },
   "first-run": {
-    title: "Run the first scenario",
-    body: "Watch the system decide against a legit S-01 payment end-to-end.",
+    title: "Dispatch a first run",
+    body: "Watch the guard clear a legitimate S-01 payment end-to-end.",
   },
 };
 

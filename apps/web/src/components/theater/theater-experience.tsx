@@ -59,7 +59,7 @@ export function TheaterExperience() {
       toast({
         variant: "warning",
         title: "Wallet required",
-        description: "Connect the owner wallet before running a live scenario.",
+        description: "Connect the owner wallet before running an agent action.",
       });
       return;
     }
@@ -149,7 +149,7 @@ export function TheaterExperience() {
       } else if (result.status === "failed") {
         toast({
           variant: "danger",
-          title: "Scenario failed",
+          title: "Run failed",
           description: result.error ?? "Unknown error",
         });
       }
@@ -163,7 +163,7 @@ export function TheaterExperience() {
       );
       toast({
         variant: "danger",
-        title: "Scenario failed",
+        title: "Run failed",
         description: message,
       });
     }
@@ -177,19 +177,19 @@ export function TheaterExperience() {
     qc.invalidateQueries({ queryKey: ["feed"] });
     toast({
       variant: "info",
-      title: "Theater reset",
-      description: "Ledger cleared back to fixtures.",
+      title: "Ledger reset",
+      description: "Ledger cleared back to its starting state.",
     });
   }
 
   return (
     <Section
-      kicker="Agent run theater"
+      kicker="Live agent runs"
       title="Watch the system decide"
       subtitle={
         USE_MOCKS
-          ? "Three scripted scenarios play the agent-guard loop in-browser. Every beat is derived from the same policy the production guard enforces."
-          : "Live scenarios against demo-control with the connected wallet as owner. Theater visualizes beats; terminal frame mirrors the real outcome."
+          ? "See the guard evaluate real agent actions against policy. Every beat is driven by the same policy engine the production guard enforces."
+          : "Dispatch an agent action with the connected wallet as owner. Each run is driven by the live guard; the terminal frame mirrors the on-chain outcome."
       }
       action={
         <div className="flex items-center gap-4">
@@ -205,7 +205,7 @@ export function TheaterExperience() {
           <div className="font-mono text-[11px] tnum text-text-tertiary">
             runtime ·{" "}
             <span className="text-text-secondary">
-              {USE_MOCKS ? "mock" : "live"}
+              {USE_MOCKS ? "preview" : "live"}
             </span>
           </div>
           {!USE_MOCKS && address && (
@@ -256,12 +256,13 @@ export function TheaterExperience() {
       </div>
 
       <div className="hairline-top mt-5 pt-5 flex flex-col gap-2 text-[12px] text-text-tertiary leading-relaxed max-w-[64ch]">
-        <span className="eyebrow text-text-secondary">Theater notes</span>
+        <span className="eyebrow text-text-secondary">Run notes</span>
         <p>
-          Intermediate beats are theatrical; the terminal frame mirrors the real
-          result from {USE_MOCKS ? "the in-browser ledger" : "demo-control"}.
-          Switch to <span className="text-text-primary">Evidence mode</span> to
-          expose the trace, policy math, and raw payload underneath the stage.
+          The visual beats animate the agent-to-guard path; the terminal frame
+          reflects the real result from{" "}
+          {USE_MOCKS ? "the in-browser ledger" : "the guard"}. Switch to{" "}
+          <span className="text-text-primary">Evidence mode</span> to expose the
+          trace, policy math, and raw payload underneath.
         </p>
       </div>
     </Section>
@@ -449,11 +450,11 @@ function EmptyTheater() {
       className="min-h-[360px] flex flex-col items-center justify-center gap-3 text-center px-6 py-12"
     >
       <span className="font-mono text-[10.5px] tnum tracking-[0.22em] uppercase text-text-quat">
-        theater idle
+        ready
       </span>
       <p className="text-[13px] text-text-tertiary max-w-[46ch]">
-        Dispatch a scenario from the rail. The theater will stage each beat —
-        owner → agent → guard → target → receipt — and settle on the real
+        Dispatch an agent action from the rail. The view traces each beat —
+        owner → agent → guard → target → receipt — and settles on the real
         outcome.
       </p>
     </motion.div>

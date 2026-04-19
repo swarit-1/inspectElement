@@ -50,13 +50,13 @@ export function DemoRunTheater({
     <section
       className="relative hairline-top pt-6"
       data-theater-mode={mode}
-      aria-label="Agent run theater"
+      aria-label="Live agent run"
     >
       {/* Control strip */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-quat">
-            theater
+            run
           </span>
           <ModeChip mode={mode} isHolding={isHolding} />
           <span className="font-mono text-[11px] tnum text-text-tertiary truncate">
@@ -79,12 +79,12 @@ export function DemoRunTheater({
             />
           )}
           <ControlButton
-            label="Replay theater"
+            label="Replay"
             onClick={controls.replay}
             variant="ghost"
           />
           <ControlButton
-            label="Re-run scenario"
+            label="Re-run"
             onClick={onReplayRun}
             variant="solid"
           />
@@ -194,7 +194,7 @@ export function DemoRunTheater({
                 onClick={onReplayRun}
                 className="font-mono text-[12px] tnum text-accent hover:text-accent-bright underline-offset-4 hover:underline"
               >
-                retry scenario →
+                retry →
               </button>
             )}
           </div>

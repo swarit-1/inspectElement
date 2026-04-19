@@ -26,12 +26,12 @@ export const DEFAULT_COUNTERPARTY_OPTIONS: Array<{
 }> = [
   {
     label: "API Merchant",
-    description: "Primary allowlisted merchant used by the legit and overspend demos.",
+    description: "Primary allowlisted merchant for agent payments within policy caps.",
     address: "0x0000000000000000000000000000000000000a01",
   },
   {
     label: "Ops Vendor",
-    description: "Secondary allowlisted vendor for non-demo recurring payments.",
+    description: "Secondary allowlisted vendor for recurring operational payments.",
     address: "0x1111111111111111111111111111111111111111",
   },
   {

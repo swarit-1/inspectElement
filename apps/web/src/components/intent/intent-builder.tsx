@@ -154,8 +154,8 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
         onCommitted(hash);
         toast({
           variant: "success",
-          title: "Intent committed (mock)",
-          description: `Manifest ${truncateAddress(hash, 6)} pinned to in-browser ledger.`,
+          title: "Intent committed",
+          description: `Manifest ${truncateAddress(hash, 6)} pinned to the in-browser ledger.`,
         });
         return;
       }

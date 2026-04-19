@@ -386,7 +386,7 @@ function RecoveryState() {
           href="/theater"
           className="font-mono text-[12px] tnum tracking-wider uppercase text-accent hover:text-accent-bright underline-offset-4 hover:underline"
         >
-          run theater with mocks →
+          explore a preview run →
         </Link>
         <span className="font-mono text-[11px] tnum text-text-tertiary">
           NEXT_PUBLIC_USE_MOCKS=true

@@ -216,7 +216,7 @@ export function DecisionPanel({
             onClick={onReplayRun}
             className="inline-flex items-center gap-2 font-mono text-[12px] tnum text-accent hover:text-accent-bright underline-offset-4 hover:underline text-left"
           >
-            retry scenario →
+            retry →
           </button>
         ) : (
           <p className="text-[12.5px] text-text-tertiary leading-relaxed">

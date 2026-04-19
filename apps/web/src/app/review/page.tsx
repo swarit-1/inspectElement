@@ -93,7 +93,7 @@ function ReviewContent() {
         variant: uphold ? "success" : "warning",
         title: uphold ? "Decision broadcast · UPHOLD" : "Decision broadcast · REJECT",
         description: USE_MOCKS
-          ? "Stub mode — no on-chain side effect."
+          ? "Recorded to local state in this build."
           : "Arbiter will pick this up on its next poll.",
       });
       qc.invalidateQueries({ queryKey: ["feed-review"] });
@@ -127,7 +127,7 @@ function ReviewContent() {
             </h1>
             <p className="text-text-secondary mt-2 max-w-[60ch]">
               {USE_MOCKS
-                ? "Stub mode — decisions post to local state only."
+                ? "Decisions post to local state in this build."
                 : "Decisions post to the reviewer endpoint (assistive; not on the live slash path)."}
             </p>
           </div>
@@ -239,7 +239,7 @@ function ReviewContent() {
                   ? "Resolutions appear here once the arbiter issues a decision."
                   : "When an owner files a challenge against an overspend receipt, it appears here."
             }
-            primary={{ label: "Run overspend scenario", href: "/theater" }}
+            primary={{ label: "See an overspend run", href: "/theater" }}
           />
         )}
 

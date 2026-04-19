@@ -59,7 +59,7 @@ export function ClosingCta() {
             href="/theater"
             className="font-mono text-[12px] tnum tracking-wider uppercase text-text-tertiary hover:text-text-primary underline-offset-4 hover:underline"
           >
-            /theater →
+            open live runs →
           </Link>
         </FadeIn>
         <motion.div

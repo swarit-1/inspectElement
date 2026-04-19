@@ -8,8 +8,8 @@ export default function TheaterPage() {
   return (
     <Shell>
       <WalletGate
-        caption="AGENT RUN THEATER LOCKED"
-        body="Connect the owner wallet to run live Sepolia scenarios against its committed intent and approvals."
+        caption="AGENT RUNS LOCKED"
+        body="Connect the owner wallet to dispatch live agent actions against its committed intent and approvals."
       >
         <TheaterExperience />
       </WalletGate>

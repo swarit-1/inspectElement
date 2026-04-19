@@ -19,7 +19,7 @@ export function TheaterPreview() {
   return (
     <section
       className="relative py-24 md:py-32 overflow-hidden"
-      aria-label="Theater preview"
+      aria-label="Live agent run preview"
     >
       <BackdropStripes />
 
@@ -38,15 +38,15 @@ export function TheaterPreview() {
                 letterSpacing: "-0.025em",
               }}
             >
-              A cinematic of the loop.
+              See the loop, live.
             </h2>
             <p
               className="text-text-secondary"
               style={{ fontSize: "var(--t-md)", lineHeight: 1.55 }}
             >
-              Three scripted runs — legit payment, blocked attack, overspend —
-              stage every beat from owner intent through guard decision to
-              receipt. Watch one, then run them yourself.
+              Every agent run — legitimate payments, blocked attempts, policy
+              breaches — flows through owner intent, the guard&apos;s decision,
+              and a signed receipt. Watch one, then run one yourself.
             </p>
           </FadeIn>
           <FadeIn delay={0.1}>
@@ -54,7 +54,7 @@ export function TheaterPreview() {
               href="/theater"
               className="group inline-flex items-center gap-2 font-mono text-[12px] tnum tracking-wider uppercase text-accent hover:text-accent-bright underline-offset-4 hover:underline"
             >
-              open full theater
+              open live runs
               <span aria-hidden>→</span>
             </Link>
           </FadeIn>
@@ -103,7 +103,7 @@ export function TheaterPreview() {
               href="/theater"
               className="font-mono text-[11px] tnum text-text-tertiary hover:text-text-primary underline-offset-4 hover:underline"
             >
-              /theater →
+              open live runs →
             </Link>
           </div>
         </motion.div>

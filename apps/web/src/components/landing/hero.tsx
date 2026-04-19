@@ -18,7 +18,7 @@ export function LandingHero() {
       <BackdropGlow />
 
       <div className="relative z-10 max-w-[1080px] mx-auto px-6 md:px-10 pt-24 pb-16 w-full grid lg:grid-cols-[1.3fr_1fr] gap-16 items-end">
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 min-w-0">
           {/* Kicker */}
           <motion.div
             className="flex items-center gap-3"
@@ -36,7 +36,7 @@ export function LandingHero() {
           {/* Headline */}
           <motion.h1
             className="font-display font-semibold tracking-tight text-text-primary leading-[0.92]"
-            style={{ fontSize: "clamp(56px, 9vw, 128px)", letterSpacing: "-0.035em" }}
+            style={{ fontSize: "clamp(48px, 6.4vw, 104px)", letterSpacing: "-0.035em" }}
             initial={reduced ? { opacity: 1 } : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: easeOutExpo, delay: 0.08 }}
@@ -96,7 +96,7 @@ export function LandingHero() {
               <span className="leading-tight">
                 Watch the system decide
                 <span className="block text-[11px] font-mono tnum tracking-wider uppercase text-text-quat mt-0.5 group-hover:text-text-tertiary">
-                  /theater · 3 scenarios
+                  live agent runs
                 </span>
               </span>
             </Link>
@@ -108,7 +108,7 @@ export function LandingHero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.66, ease: easeOutExpo, delay: 0.34 }}
-          className="hidden lg:flex w-full min-w-[320px] max-w-[360px] flex-col gap-0 border border-rule bg-bg-surface/60 backdrop-blur-sm"
+          className="hidden lg:flex w-full max-w-[360px] justify-self-end flex-col gap-0 border border-rule bg-bg-surface/60 backdrop-blur-sm"
         >
           <div className="grid grid-cols-[88px_1fr] items-baseline gap-x-4 px-5 py-3 hairline-bottom">
             <span className="eyebrow text-text-secondary">Live spec</span>

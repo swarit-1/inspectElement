@@ -63,7 +63,7 @@ export function ScenarioRail({
 }: ScenarioRailProps) {
   return (
     <nav
-      aria-label="Scenario selector"
+      aria-label="Agent action selector"
       className="flex flex-col hairline-top hairline-bottom"
     >
       <div className="px-4 py-3 flex items-center justify-between hairline-bottom">

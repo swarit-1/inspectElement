@@ -28,7 +28,7 @@ export function LandingNav() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-7" aria-label="Primary">
-          <NavLink href="/theater" label="Theater" />
+          <NavLink href="/theater" label="Live runs" />
           <NavLink href="/dashboard" label="Dashboard" />
           <NavLink href="/review" label="Review" />
         </nav>
