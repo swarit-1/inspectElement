@@ -4,7 +4,7 @@ This is the operator checklist for a **fresh browser session** on **Base Sepolia
 
 ## 0. Prereqs
 
-- **Contracts:** `deployments/base-sepolia.json` filled by Dev 1 (addresses + constants). Keep **`apps/web/src/config/base-sepolia.json`** in sync with that file (same JSON), or rely on `NEXT_PUBLIC_*` contract overrides in the web app.
+- **Contracts:** `deployments/base-sepolia.json` filled by Dev 1 (addresses + constants). The web app now reads this repo-root manifest directly; `NEXT_PUBLIC_*` contract overrides still win when set.
 - **Infra (Dev 3):** trace signing + indexer + REST API (default `http://localhost:8787`). Set `NEXT_PUBLIC_INFRA_API_URL` if different.
 - **Demo control (Dev 2):** `npm run demo` from the repo root (default `http://localhost:7402`). Set `NEXT_PUBLIC_RUNTIME_API_URL` if different.
 - **Agent env:** operator key, RPC, trace URL — see `agents/shared.ts` and project `.env` examples.

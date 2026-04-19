@@ -1,0 +1,7 @@
+{
+  "IntentGuardDeploy": {
+    "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "traceAckSigner": "0x970436F359b25e8957238097697E0655C148C645",
+    "reviewerSigner": "0xd133e70cc9bef5963F50fa3567D83F6A7523BF71"
+  }
+}

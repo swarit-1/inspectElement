@@ -56,7 +56,14 @@ interface IIntentRegistry is IGuardTypes {
     function getActiveIntentHash(address owner) external view returns (bytes32);
 
     /// @notice Read the historical IntentConfig + manifestURI for an `intentHash`.
-    /// @dev Used by ChallengeArbiter to resolve disputes against the intent at receipt time.
+    /// @dev This is the frozen `intentByHash` surface from the Dev 1 spec.
+    function intentByHash(bytes32 intentHash)
+        external
+        view
+        returns (IntentConfig memory cfg, string memory manifestURI);
+
+    /// @notice Backward-compatible alias retained for existing consumers while the
+    /// repo converges on the spec name `intentByHash`.
     function getIntent(bytes32 intentHash)
         external
         view

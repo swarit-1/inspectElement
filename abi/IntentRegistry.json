@@ -261,6 +261,67 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "intentHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "intentByHash",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSpendPerTx",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSpendPerDay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedCounterparties",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint64",
+            "name": "expiry",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IGuardTypes.IntentConfig",
+        "name": "cfg",
+        "type": "tuple"
+      },
+      {
+        "internalType": "string",
+        "name": "manifestURI",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "revokeIntent",
     "outputs": [],

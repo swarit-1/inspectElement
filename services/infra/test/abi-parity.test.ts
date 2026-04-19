@@ -156,4 +156,12 @@ describe("Web ABI completeness — events the dashboard needs", () => {
     const ev = eventByName(challengeArbiterAbi, "ChallengeResolved")!;
     expect(ev.inputs.map((i) => i.name)).toEqual(["challengeId", "uphold", "payout"]);
   });
+
+  it("intentRegistryAbi exposes both the frozen intentByHash view and the legacy getIntent alias", () => {
+    const frozen = functionByName(intentRegistryAbi, "intentByHash");
+    const alias = functionByName(intentRegistryAbi, "getIntent");
+    expect(frozen).not.toBeNull();
+    expect(alias).not.toBeNull();
+    expect(toFunctionSelector(frozen!)).toBe("0x38afa795");
+  });
 });

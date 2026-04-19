@@ -1,7 +1,33 @@
-import "dotenv/config";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const SERVICE_ROOT = resolve(__dirname, "../..");
+const REPO_ROOT = resolve(SERVICE_ROOT, "../..");
+
+function loadEnvFiles(): void {
+  // First loaded file wins because dotenv doesn't override existing vars by
+  // default. This gives us the intended precedence:
+  //   shell env > services/infra/.env.local > services/infra/.env > repo/.env.local > repo/.env
+  const candidates = [
+    resolve(SERVICE_ROOT, ".env.local"),
+    resolve(SERVICE_ROOT, ".env"),
+    resolve(REPO_ROOT, ".env.local"),
+    resolve(REPO_ROOT, ".env"),
+  ];
+
+  for (const path of candidates) {
+    if (existsSync(path)) {
+      loadDotenv({ path, override: false });
+    }
+  }
+}
+
+loadEnvFiles();
 
 const EnvSchema = z.object({
   RPC_URL: z.string().url().default("https://sepolia.base.org"),

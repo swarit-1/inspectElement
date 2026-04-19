@@ -18,12 +18,15 @@
 ```
 npm install
 npm run compile
-npm run test
+npm run test:contracts
 npm run deploy:base-sepolia   # requires .env: BASE_SEPOLIA_RPC_URL, DEPLOYER_PRIVATE_KEY, BASESCAN_API_KEY
                               # ALSO requires services/infra/.env.local with TRACE_ACK_PRIVATE_KEY
                               # (optionally REVIEWER_PRIVATE_KEY) — generate with
                               #   `npm --prefix services/infra run keygen`
 ```
+
+Contract tests intentionally run from the local `test/` package because that package is pinned to
+`"type": "commonjs"` for Hardhat's Mocha loader. The repo root stays ESM for the app/runtime code.
 
 The `deploy:base-sepolia` script chains three steps:
 
@@ -308,6 +311,25 @@ receiptId = keccak256(abi.encode(
   compile` and copied by `scripts/writeArtifacts.ts`.
 
 All three are committed to the repo root. Devs 2, 3, 4 import directly.
+
+## 11.5 Frozen function selectors
+
+These are the selectors other workstreams may hard-code for integrations,
+wallet debug traces, and calldata checks. Print them mechanically with
+`npx tsx scripts/printConstants.ts`.
+
+| Surface | Signature | Selector |
+|---|---|---|
+| IF-02 | `commitIntent(bytes32,(address,address,uint256,uint256,address[],uint64,uint256),string)` | `0x7f83137d` |
+| IF-02 | `revokeIntent()` | `0xf8fbde76` |
+| IF-02 | `setAgentDelegate(bytes32,address,bool)` | `0x4a48773c` |
+| IF-03 | `registerAgent(bytes32,address,string)` | `0x623ae322` |
+| IF-03 | `stake(bytes32,uint256)` | `0x8caa5230` |
+| IF-03 | `getAgent(bytes32)` | `0xa6c2af01` |
+| IF-05 | `preflightCheck((address,bytes32,address,address,uint256,bytes,string,(bytes32,bytes32,uint64,bytes)))` | `0x759ae96e` |
+| IF-05 | `executeWithGuard((address,bytes32,address,address,uint256,bytes,string,(bytes32,bytes32,uint64,bytes)))` | `0x291ff02a` |
+| IF-08 | `fileAmountViolation(bytes32)` | `0x781ab636` |
+| IF-11 | `resolveByReviewer(uint256,bool,uint256,bytes)` | `0x9891f149` |
 
 ## 12. DO NOT
 

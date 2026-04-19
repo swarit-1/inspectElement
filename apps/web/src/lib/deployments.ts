@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import manifest from "@/config/base-sepolia.json";
+import manifest from "../../../../deployments/base-sepolia.json";
 
 export interface DeploymentManifest {
   chainId: number;
@@ -32,8 +32,9 @@ function envAddr(key: string): Address | undefined {
 }
 
 /**
- * Contract addresses for Base Sepolia. Dev 1 publishes `deployments/base-sepolia.json`;
- * any `NEXT_PUBLIC_*` override wins for client-side iteration without editing the JSON.
+ * Contract addresses for Base Sepolia. Dev 1 publishes the canonical root
+ * manifest at `deployments/base-sepolia.json`; any `NEXT_PUBLIC_*` override
+ * wins for client-side iteration without editing the checked-in manifest.
  */
 export function getDeploymentAddresses(): {
   usdc: Address;

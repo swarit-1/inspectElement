@@ -15,6 +15,19 @@ const TRACE_ACK_TYPE =
 const ACTION_RECEIPT_SIG =
     "ActionReceipt(bytes32,address,bytes32,bytes32,address,address,uint256,bytes32,bytes32,uint256,uint64)";
 
+const SELECTORS = [
+    "commitIntent(bytes32,(address,address,uint256,uint256,address[],uint64,uint256),string)",
+    "revokeIntent()",
+    "setAgentDelegate(bytes32,address,bool)",
+    "registerAgent(bytes32,address,string)",
+    "stake(bytes32,uint256)",
+    "getAgent(bytes32)",
+    "preflightCheck((address,bytes32,address,address,uint256,bytes,string,(bytes32,bytes32,uint64,bytes)))",
+    "executeWithGuard((address,bytes32,address,address,uint256,bytes,string,(bytes32,bytes32,uint64,bytes)))",
+    "fileAmountViolation(bytes32)",
+    "resolveByReviewer(uint256,bool,uint256,bytes)",
+];
+
 const REASONS = [
     "COUNTERPARTY_NOT_ALLOWED",
     "TOKEN_NOT_USDC",
@@ -39,6 +52,11 @@ console.log("  TRACE_ACK_TYPEHASH  =", ethers.keccak256(ethers.toUtf8Bytes(TRACE
 console.log("\n=== ActionReceipt event ===");
 console.log("  signature  =", ACTION_RECEIPT_SIG);
 console.log("  topic0     =", ethers.id(ACTION_RECEIPT_SIG));
+
+console.log("\n=== Frozen function selectors ===");
+for (const signature of SELECTORS) {
+    console.log(`  ${signature.padEnd(110)} ${ethers.id(signature).slice(0, 10)}`);
+}
 
 console.log("\n=== Reason codes (GuardRejected payload) ===");
 for (const name of REASONS) {
