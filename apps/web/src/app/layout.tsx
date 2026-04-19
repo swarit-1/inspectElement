@@ -17,18 +17,18 @@ const redhat = Red_Hat_Text({
   weight: ["400", "500", "600", "700"],
 });
 
-const TITLE = "IntentGuard — Guard layer for autonomous agents";
+const TITLE = "Vault — Guard layer for autonomous agents";
 const DESCRIPTION =
   "On-chain intents + challenge arbitration for AI agents moving USDC on Base. Sign an intent, let an agent execute, challenge any misstep.";
 
 export const metadata: Metadata = {
   title: {
     default: TITLE,
-    template: "%s · IntentGuard",
+    template: "%s · Vault",
   },
   description: DESCRIPTION,
-  applicationName: "IntentGuard",
-  authors: [{ name: "IntentGuard" }],
+  applicationName: "Vault",
+  authors: [{ name: "Vault" }],
   keywords: [
     "Base",
     "USDC",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    siteName: "IntentGuard",
+    siteName: "Vault",
     type: "website",
     locale: "en_US",
   },

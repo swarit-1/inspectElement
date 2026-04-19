@@ -10,7 +10,7 @@ const THREATS = [
     name: "Prompt injection",
     line: "The agent is told to drain the wallet.",
     detail:
-      "A hostile prompt embedded in a webpage, document, or API response redirects spend. Without guard-level policy, the model executes. With IntentGuard, the counterparty fails allowlist, guard rejects — no funds leave.",
+      "A hostile prompt embedded in a webpage, document, or API response redirects spend. Without guard-level policy, the model executes. With Vault, the counterparty fails allowlist, guard rejects — no funds leave.",
     tone: "danger" as const,
   },
   {
@@ -26,7 +26,7 @@ const THREATS = [
     name: "Constrained autonomy",
     line: "You want agent speed without trust debt.",
     detail:
-      "Manual review per-transaction isn't autonomy; full blank-check isn't responsible. IntentGuard encodes the owner's envelope once, then lets the agent move at its own pace inside it.",
+      "Manual review per-transaction isn't autonomy; full blank-check isn't responsible. Vault encodes the owner's envelope once, then lets the agent move at its own pace inside it.",
     tone: "accent" as const,
   },
 ];

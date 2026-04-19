@@ -9,16 +9,10 @@ export function LandingFooter() {
       <div className="max-w-[1080px] mx-auto px-6 md:px-10 py-10 grid gap-8 md:grid-cols-[auto_1fr_auto] items-start">
         <div className="flex items-baseline gap-1.5">
           <span
-            className="font-display font-semibold tracking-tight text-text-primary leading-none"
-            style={{ fontSize: "var(--t-md)" }}
-          >
-            INTENT
-          </span>
-          <span
             className="font-display font-semibold tracking-tight text-accent leading-none"
             style={{ fontSize: "var(--t-md)" }}
           >
-            GUARD
+            VAULT
           </span>
         </div>
 

@@ -11,7 +11,7 @@ export function LandingHero() {
   return (
     <section
       className="relative overflow-hidden min-h-[88vh] flex items-center"
-      aria-label="IntentGuard introduction"
+      aria-label="Vault introduction"
     >
       {/* Backdrop */}
       <BackdropGrid />

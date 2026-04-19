@@ -72,16 +72,10 @@ export function Shell({ children }: ShellProps) {
           <span className="flex items-baseline gap-1.5">
             <VaultMark />
             <span
-              className="font-display font-semibold tracking-tight leading-none"
+              className="font-display font-semibold tracking-tight text-accent leading-none"
               style={{ fontSize: "var(--t-sm)" }}
             >
-              INTENT
-            </span>
-            <span
-              className="font-display font-semibold text-accent tracking-tight leading-none"
-              style={{ fontSize: "var(--t-sm)" }}
-            >
-              GUARD
+              VAULT
             </span>
           </span>
         </button>
@@ -112,16 +106,10 @@ export function Shell({ children }: ShellProps) {
             <div className="flex items-baseline gap-1.5">
               <VaultMark />
               <span
-                className="font-display font-semibold tracking-tight text-text-primary leading-none"
-                style={{ fontSize: "var(--t-md)" }}
-              >
-                INTENT
-              </span>
-              <span
                 className="font-display font-semibold tracking-tight text-accent leading-none"
                 style={{ fontSize: "var(--t-md)" }}
               >
-                GUARD
+                VAULT
               </span>
             </div>
             <span className="eyebrow mt-2 block text-text-quat">

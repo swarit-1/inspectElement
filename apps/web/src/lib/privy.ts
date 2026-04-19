@@ -28,7 +28,7 @@ export const privyClientConfig: PrivyClientConfig = {
       "wallet_connect",
     ],
     walletChainType: "ethereum-only",
-    landingHeader: "IntentGuard",
+    landingHeader: "Vault",
     loginMessage:
       "Create an account or sign in with email, then connect or link MetaMask or Coinbase Wallet on Base Sepolia.",
   },
