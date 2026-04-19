@@ -16,20 +16,12 @@ import {
   loadAgentEnv,
   runExecuteFlow,
   runPreflightOnlyFlow,
-  type ScenarioResult,
 } from "../../../agents/shared.js";
 import { resolveDemoPort } from "../../../packages/trace/src/index.js";
+import { createDemoStateStore } from "./state.js";
 
 const PORT = resolveDemoPort();
-
-interface DemoState {
-  scenarioId: string;
-  status: "running" | "completed" | "failed";
-  result: ScenarioResult | null;
-  startedAt: number;
-}
-
-let lastRun: DemoState | null = null;
+const demoState = createDemoStateStore();
 
 function main() {
   const app = express();
@@ -53,12 +45,7 @@ function main() {
    */
   app.post("/demo/run-legit", async (_req, res) => {
     const scenarioId = randomUUID();
-    lastRun = {
-      scenarioId,
-      status: "running",
-      result: null,
-      startedAt: Date.now(),
-    };
+    demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
@@ -66,17 +53,13 @@ function main() {
     try {
       const env = loadAgentEnv();
       const result = await runExecuteFlow("legit", env);
-      lastRun = { ...lastRun, status: "completed", result };
+      demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
-      lastRun = {
-        ...lastRun,
-        status: "failed",
-        result: {
-          scenario: "legit",
-          outcome: "failed",
-          error: err instanceof Error ? err.message : String(err),
-        },
-      };
+      demoState.finishRun(scenarioId, "failed", {
+        scenario: "legit",
+        outcome: "failed",
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   });
 
@@ -86,29 +69,20 @@ function main() {
    */
   app.post("/demo/run-blocked", async (_req, res) => {
     const scenarioId = randomUUID();
-    lastRun = {
-      scenarioId,
-      status: "running",
-      result: null,
-      startedAt: Date.now(),
-    };
+    demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
       const env = loadAgentEnv();
       const result = await runPreflightOnlyFlow(env);
-      lastRun = { ...lastRun, status: "completed", result };
+      demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
-      lastRun = {
-        ...lastRun,
-        status: "failed",
-        result: {
-          scenario: "blocked",
-          outcome: "failed",
-          error: err instanceof Error ? err.message : String(err),
-        },
-      };
+      demoState.finishRun(scenarioId, "failed", {
+        scenario: "blocked",
+        outcome: "failed",
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   });
 
@@ -118,29 +92,20 @@ function main() {
    */
   app.post("/demo/run-overspend", async (_req, res) => {
     const scenarioId = randomUUID();
-    lastRun = {
-      scenarioId,
-      status: "running",
-      result: null,
-      startedAt: Date.now(),
-    };
+    demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
       const env = loadAgentEnv();
       const result = await runExecuteFlow("overspend", env);
-      lastRun = { ...lastRun, status: "completed", result };
+      demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
-      lastRun = {
-        ...lastRun,
-        status: "failed",
-        result: {
-          scenario: "overspend",
-          outcome: "failed",
-          error: err instanceof Error ? err.message : String(err),
-        },
-      };
+      demoState.finishRun(scenarioId, "failed", {
+        scenario: "overspend",
+        outcome: "failed",
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   });
 
@@ -149,6 +114,7 @@ function main() {
    * Returns the latest scenario outcome for the dashboard.
    */
   app.get("/demo/status", (_req, res) => {
+    const lastRun = demoState.getLastRun();
     if (!lastRun) {
       res.json({ last: null });
       return;
@@ -172,6 +138,7 @@ function main() {
    * Health check
    */
   app.get("/health", (_req, res) => {
+    const lastRun = demoState.getLastRun();
     res.json({ status: "ok", lastRun: lastRun?.scenarioId ?? null });
   });
 

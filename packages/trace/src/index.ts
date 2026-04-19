@@ -23,6 +23,14 @@ export type {
 export { GuardDecision, REASON_CODES } from "./types.js";
 export { serializeCanonical } from "./serialize.js";
 export { computeContextDigest } from "./digest.js";
+export {
+  buildExecutionRequest,
+  prepareLiveTrace,
+} from "./execution-request.js";
+export type {
+  BuildExecutionRequestInput,
+  LiveTraceOverrides,
+} from "./execution-request.js";
 export { uploadTrace, toTraceAck, TraceDigestMismatchError, TraceUploadError } from "./trace-client.js";
 export type { TraceUploadResponse } from "./trace-client.js";
 export { createGuardClient, GuardRejectedError } from "./guard-client.js";

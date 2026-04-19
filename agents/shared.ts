@@ -12,6 +12,8 @@ import type { PrivateKeyAccount } from "viem/accounts";
 import { baseSepolia, hardhat } from "viem/chains";
 import type { DecisionTrace } from "../packages/trace/src/types.js";
 import {
+  buildExecutionRequest,
+  prepareLiveTrace,
   uploadTrace,
   toTraceAck,
   loadDeploymentConfig,
@@ -20,6 +22,7 @@ import {
   loadRuntimeEnv,
   REASON_CODE_HEX,
 } from "../packages/trace/src/index.js";
+import type { BuildExecutionRequestInput } from "../packages/trace/src/index.js";
 
 function pickChain() {
   const id = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined;
@@ -78,6 +81,42 @@ export interface ScenarioResult {
   readonly error?: string;
 }
 
+interface PreparedScenario {
+  readonly liveTrace: DecisionTrace;
+  readonly requestInput: Omit<BuildExecutionRequestInput, "traceURI" | "traceAck">;
+}
+
+function prepareScenarioExecution(
+  scenario: "legit" | "blocked" | "overspend",
+  env: AgentEnv
+): PreparedScenario {
+  const config = loadDeploymentConfig();
+  const { trace, expectedTarget, expectedAmount } = loadFixture(scenario);
+  const normalizedTarget = getAddress(expectedTarget.toLowerCase());
+  const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
+  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
+
+  const liveTrace = prepareLiveTrace(trace, {
+    owner: normalizedOwner,
+    agentId: env.agentId,
+    target: normalizedTarget,
+    token: normalizedToken,
+    amount: expectedAmount,
+  });
+
+  return {
+    liveTrace,
+    requestInput: {
+      owner: normalizedOwner,
+      agentId: env.agentId,
+      target: normalizedTarget,
+      token: normalizedToken,
+      amount: expectedAmount,
+      data: "0x" as Hex,
+    },
+  };
+}
+
 /**
  * Run the full trace-upload → execute flow for a legit/overspend agent.
  */
@@ -85,44 +124,19 @@ export async function runExecuteFlow(
   scenario: "legit" | "overspend",
   env: AgentEnv
 ): Promise<ScenarioResult> {
-  const config = loadDeploymentConfig();
-  const { trace, expectedTarget, expectedAmount } = loadFixture(scenario);
-
-  // Override trace fields with live values
-  const normalizedTarget = getAddress(expectedTarget.toLowerCase());
-  const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
-  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
-
-  const liveTrace: DecisionTrace = {
-    ...trace,
-    owner: normalizedOwner,
-    agentId: env.agentId,
-    proposedAction: {
-      ...trace.proposedAction,
-      target: normalizedTarget,
-      token: normalizedToken,
-      amount: expectedAmount,
-    },
-  };
+  const prepared = prepareScenarioExecution(scenario, env);
 
   console.log(`[${scenario}] Uploading trace...`);
-  const traceResponse = await uploadTrace(liveTrace, env.traceServiceUrl);
+  const traceResponse = await uploadTrace(prepared.liveTrace, env.traceServiceUrl);
   console.log(`[${scenario}] TraceURI: ${traceResponse.traceURI}`);
   console.log(`[${scenario}] Digest:   ${traceResponse.contextDigest}`);
 
-  const traceAck = toTraceAck(traceResponse);
   const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl, chain: pickChain() });
-
-  const executionRequest = {
-    owner: normalizedOwner,
-    agentId: env.agentId,
-    target: normalizedTarget,
-    token: normalizedToken,
-    amount: BigInt(expectedAmount),
-    data: "0x" as Hex,
+  const executionRequest = buildExecutionRequest({
+    ...prepared.requestInput,
     traceURI: traceResponse.traceURI,
-    traceAck,
-  };
+    traceAck: toTraceAck(traceResponse),
+  });
 
   console.log(`[${scenario}] Running preflight...`);
   const preflightResult = await guardClient.preflight(executionRequest);
@@ -158,42 +172,18 @@ export async function runExecuteFlow(
 export async function runPreflightOnlyFlow(
   env: AgentEnv
 ): Promise<ScenarioResult> {
-  const config = loadDeploymentConfig();
-  const { trace, expectedTarget, expectedAmount } = loadFixture("blocked");
-
-  const normalizedTarget = getAddress(expectedTarget.toLowerCase());
-  const normalizedToken = getAddress((config.contracts.USDC as string).toLowerCase());
-  const normalizedOwner = getAddress((trace.owner as string).toLowerCase());
-
-  const liveTrace: DecisionTrace = {
-    ...trace,
-    owner: normalizedOwner,
-    agentId: env.agentId,
-    proposedAction: {
-      ...trace.proposedAction,
-      target: normalizedTarget,
-      token: normalizedToken,
-      amount: expectedAmount,
-    },
-  };
+  const prepared = prepareScenarioExecution("blocked", env);
 
   console.log("[blocked] Uploading trace...");
-  const traceResponse = await uploadTrace(liveTrace, env.traceServiceUrl);
+  const traceResponse = await uploadTrace(prepared.liveTrace, env.traceServiceUrl);
   console.log(`[blocked] TraceURI: ${traceResponse.traceURI}`);
 
-  const traceAck = toTraceAck(traceResponse);
   const guardClient = createGuardClient(env.account, { rpcUrl: env.rpcUrl, chain: pickChain() });
-
-  const executionRequest = {
-    owner: normalizedOwner,
-    agentId: env.agentId,
-    target: normalizedTarget,
-    token: normalizedToken,
-    amount: BigInt(expectedAmount),
-    data: "0x" as Hex,
+  const executionRequest = buildExecutionRequest({
+    ...prepared.requestInput,
     traceURI: traceResponse.traceURI,
-    traceAck,
-  };
+    traceAck: toTraceAck(traceResponse),
+  });
 
   console.log("[blocked] Running preflight (will NOT execute)...");
   const result = await guardClient.preflight(executionRequest);
