@@ -48,16 +48,10 @@ export default function LoginPage() {
           <Link href="/" className="flex items-baseline gap-1.5 group">
             <VaultMark />
             <span
-              className="font-display font-semibold tracking-tight text-text-primary leading-none"
-              style={{ fontSize: "14px" }}
-            >
-              INTENT
-            </span>
-            <span
               className="font-display font-semibold tracking-tight text-accent leading-none"
               style={{ fontSize: "14px" }}
             >
-              GUARD
+              VAULT
             </span>
           </Link>
           <Link

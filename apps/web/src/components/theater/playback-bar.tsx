@@ -105,10 +105,16 @@ function ViewModeToggle({
 }) {
   return (
     <div
-      className="relative inline-flex items-center rounded-[--radius-sharp] border border-rule"
+      className="relative inline-grid grid-cols-2 items-center rounded-[--radius-sharp] border border-rule"
       role="tablist"
       aria-label="View mode"
     >
+      <motion.span
+        aria-hidden
+        className="absolute top-0 bottom-0 w-1/2 bg-accent"
+        animate={{ left: value === "story" ? "0%" : "50%" }}
+        transition={{ duration: 0.28, ease: easeStage }}
+      />
       {(["story", "evidence"] as const).map((m) => {
         const active = value === m;
         return (
@@ -119,8 +125,8 @@ function ViewModeToggle({
             aria-selected={active}
             onClick={() => onChange(m)}
             className={`
-              relative z-10 h-7 px-3 font-mono text-[10.5px] tnum tracking-wider uppercase
-              transition-colors cursor-pointer
+              relative z-10 h-7 min-w-[88px] px-3 font-mono text-[10.5px] tnum tracking-wider uppercase
+              text-center transition-colors cursor-pointer
               ${active ? "text-bg-root" : "text-text-tertiary hover:text-text-primary"}
             `}
           >
@@ -128,15 +134,6 @@ function ViewModeToggle({
           </button>
         );
       })}
-      <motion.span
-        aria-hidden
-        className="absolute top-0 bottom-0 bg-accent"
-        animate={{
-          left: value === "story" ? 0 : "50%",
-          right: value === "story" ? "50%" : 0,
-        }}
-        transition={{ duration: 0.28, ease: easeStage }}
-      />
     </div>
   );
 }

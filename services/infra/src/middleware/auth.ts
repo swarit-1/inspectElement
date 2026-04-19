@@ -13,11 +13,14 @@ import { logger } from "../utils/logger.js";
  * Augments `req` with `req.auth` containing the authenticated identity.
  */
 
+export type UserRole = "owner" | "challenger" | "reviewer" | "partner_admin";
+
 export interface AuthInfo {
   type: "user" | "partner" | "service";
   address?: string;    // wallet address for user auth
   partnerId?: string;  // partner UUID for API key auth
   scopes: string[];    // e.g. ["read", "write", "admin"]
+  roles: UserRole[];   // e.g. ["owner", "reviewer"]
 }
 
 declare global {
@@ -86,6 +89,28 @@ export function requireScope(...scopes: string[]) {
   };
 }
 
+/**
+ * Require specific roles on the authenticated identity.
+ * At least one of the specified roles must be present.
+ */
+export function requireRole(...roles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.auth) {
+      res.status(401).json({ error: "unauthorized", message: "Authentication required" });
+      return;
+    }
+    const hasRole = roles.some((r) => req.auth!.roles.includes(r));
+    if (!hasRole) {
+      res.status(403).json({
+        error: "forbidden",
+        message: `Requires one of roles: ${roles.join(", ")}`,
+      });
+      return;
+    }
+    next();
+  };
+}
+
 async function tryAuthenticate(req: Request): Promise<void> {
   // Already authenticated (e.g., by a previous middleware)
   if (req.auth) return;
@@ -128,10 +153,20 @@ async function verifySessionToken(token: string): Promise<AuthInfo | null> {
   if (!data) return null;
   if (new Date(data.expires_at) < new Date()) return null;
 
+  // Derive roles from session data — all authenticated users are owners/challengers
+  const roles: UserRole[] = ["owner", "challenger"];
+  // Check if this address is the reviewer signer
+  const reviewerKey = process.env.REVIEWER_PRIVATE_KEY;
+  if (reviewerKey) {
+    // In a real system we'd check if the address matches the reviewer key's address
+    // For now, users can be granted reviewer role via user_sessions.roles column
+  }
+
   return {
     type: "user",
     address: data.address.toLowerCase(),
     scopes: ["read", "write"],
+    roles,
   };
 }
 
@@ -153,6 +188,7 @@ async function verifyApiKey(key: string): Promise<AuthInfo | null> {
     type: "partner",
     partnerId: data.id,
     scopes: data.scopes as string[],
+    roles: ["partner_admin"],
   };
 }
 

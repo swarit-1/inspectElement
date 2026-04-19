@@ -66,7 +66,7 @@ export function useSiweAuth() {
       const siweMessage = new SiweMessage({
         domain: window.location.host,
         address,
-        statement: "Sign in to IntentGuard",
+        statement: "Sign in to Vault",
         uri: window.location.origin,
         version: "1",
         chainId: chainId ?? 84532,

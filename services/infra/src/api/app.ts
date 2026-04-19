@@ -19,6 +19,10 @@ import { createReviewerRouter } from "./reviewer.js";
 import { createScreenRouter } from "./screen.js";
 import { createSummaryRouter } from "./summary.js";
 import { createTracesRouter } from "./traces.js";
+import { createScreenRouter } from "../gemini/screen.js";
+import { createReceiptSummaryRouter, createChallengeSummaryRouter } from "../gemini/summarize.js";
+import { createExecutionsRouter } from "./executions.js";
+import { createSSERouter } from "./sse.js";
 
 export interface AppOptions {
   screeningProvider?: ScreeningProvider;
@@ -54,6 +58,11 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/v1/challenges", createChallengePrepareRouter());
   app.use("/v1/reviewer", createReviewerRouter());
   app.use("/v1/replay", createReplayRouter());
+  app.use("/v1/screen", createScreenRouter());
+  app.use("/v1/receipts/:receiptId/summary", createReceiptSummaryRouter());
+  app.use("/v1/challenges/:challengeId/summary", createChallengeSummaryRouter());
+  app.use("/v1/executions", createExecutionsRouter());
+  app.use("/v1/events", createSSERouter());
   app.use("/ipfs", createLocalCasRouter());
 
   // Execution API — partner/runtime-facing (requires auth)

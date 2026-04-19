@@ -150,16 +150,10 @@ export function OnboardingWizard() {
           <Link href="/" className="flex items-baseline gap-1.5">
             <VaultMark />
             <span
-              className="font-display font-semibold tracking-tight text-text-primary leading-none"
-              style={{ fontSize: "14px" }}
-            >
-              INTENT
-            </span>
-            <span
               className="font-display font-semibold tracking-tight text-accent leading-none"
               style={{ fontSize: "14px" }}
             >
-              GUARD
+              VAULT
             </span>
           </Link>
           <div className="flex items-center gap-5">
@@ -409,7 +403,7 @@ function StepNetwork({ onAdvance }: { onAdvance: () => void }) {
     <StepShell
       kicker="Step 02"
       title="Switch to Base Sepolia."
-      body="All IntentGuard contracts live on Base Sepolia (chain 84532). Your wallet will prompt you to add or switch; approve once."
+      body="All Vault contracts live on Base Sepolia (chain 84532). Your wallet will prompt you to add or switch; approve once."
     >
       <div className="flex items-center gap-5 flex-wrap">
         {!isConnected ? (

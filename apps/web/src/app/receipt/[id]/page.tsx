@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingPulse } from "@/components/ui/loading";
 import { ChallengeCTA } from "@/components/challenge/challenge-cta";
 import { ChallengeStatus } from "@/components/challenge/challenge-status";
+import { GeminiSummaryCard } from "@/components/gemini/gemini-summary-card";
 import { DeltaViz } from "@/components/receipt/delta-viz";
 import { easeStage } from "@/lib/motion";
 import { getReceipt, NotFoundError } from "@/lib/api";
@@ -184,6 +185,9 @@ export default function ReceiptPage() {
                 href={`https://sepolia.basescan.org/tx/${receipt.txHash}`}
               />
             </section>
+
+            {/* ── Gemini advisory summary ── */}
+            <GeminiSummaryCard kind="receipt" referenceId={receipt.receiptId} />
 
             {/* ── Challenge action / status ── */}
             <ChallengeCTA

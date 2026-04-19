@@ -35,7 +35,7 @@ export function ThreeStep() {
   return (
     <section
       className="relative py-24 md:py-32"
-      aria-label="How IntentGuard works"
+      aria-label="How Vault works"
     >
       <div className="max-w-[1080px] mx-auto px-6 md:px-10">
         <FadeIn className="flex flex-col gap-3 mb-14 max-w-[48ch]">
