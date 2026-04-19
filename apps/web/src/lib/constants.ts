@@ -19,11 +19,31 @@ export const PLACEHOLDER_ADDRESSES = CONTRACT_ADDRESSES;
 
 // ── Default counterparties for demo ──
 /** First address matches `fixtures/legit.json` / `overspend.json` `expectedTarget` (EIP-55 checksummed). */
-export const DEFAULT_COUNTERPARTIES: Address[] = [
-  "0x0000000000000000000000000000000000000a01",
-  "0x1111111111111111111111111111111111111111",
-  "0x2222222222222222222222222222222222222222",
+export const DEFAULT_COUNTERPARTY_OPTIONS: Array<{
+  label: string;
+  description: string;
+  address: Address;
+}> = [
+  {
+    label: "API Merchant",
+    description: "Primary allowlisted merchant used by the legit and overspend demos.",
+    address: "0x0000000000000000000000000000000000000a01",
+  },
+  {
+    label: "Ops Vendor",
+    description: "Secondary allowlisted vendor for non-demo recurring payments.",
+    address: "0x1111111111111111111111111111111111111111",
+  },
+  {
+    label: "Data Backup Vendor",
+    description: "Tertiary allowlisted vendor kept here as a fallback counterparty.",
+    address: "0x2222222222222222222222222222222222222222",
+  },
 ];
+
+export const DEFAULT_COUNTERPARTIES: Address[] = DEFAULT_COUNTERPARTY_OPTIONS.map(
+  (option) => option.address
+);
 
 // ── API base URLs ──
 export const INFRA_API_BASE =
@@ -50,4 +70,22 @@ export function formatUsdc(raw: string | bigint): string {
 
 export function truncateAddress(addr: string, chars = 4): string {
   return `${addr.slice(0, chars + 2)}...${addr.slice(-chars)}`;
+}
+
+export function getCounterpartyOption(address: string): {
+  label: string;
+  description: string;
+  address: Address;
+} | null {
+  const normalized = address.toLowerCase();
+  return (
+    DEFAULT_COUNTERPARTY_OPTIONS.find(
+      (option) => option.address.toLowerCase() === normalized
+    ) ?? null
+  );
+}
+
+export function formatCounterpartyLabel(address: string): string {
+  const option = getCounterpartyOption(address);
+  return option ? option.label : truncateAddress(address, 4);
 }
