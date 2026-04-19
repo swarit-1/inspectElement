@@ -138,4 +138,43 @@ CREATE TABLE IF NOT EXISTS blocked_attempts (
 );
 CREATE INDEX IF NOT EXISTS idx_blocked_owner ON blocked_attempts(owner);
 CREATE INDEX IF NOT EXISTS idx_blocked_created ON blocked_attempts(created_at);
+
+CREATE TABLE IF NOT EXISTS gemini_summaries (
+  kind           TEXT NOT NULL,            -- 'receipt' | 'challenge'
+  reference_id   TEXT NOT NULL,            -- receipt_id or challenge_id
+  summary_json   TEXT NOT NULL,            -- full SummaryResponse as JSON
+  created_at     INTEGER NOT NULL,
+  PRIMARY KEY (kind, reference_id)
+);
+
+CREATE TABLE IF NOT EXISTS gemini_screenings (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  context_digest TEXT NOT NULL,
+  owner          TEXT,
+  agent_id       TEXT,
+  injection_score REAL NOT NULL,
+  severity       TEXT NOT NULL,
+  recommended_action TEXT NOT NULL,
+  response_json  TEXT NOT NULL,
+  created_at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_screenings_digest ON gemini_screenings(context_digest);
+
+CREATE TABLE IF NOT EXISTS executions (
+  id             TEXT PRIMARY KEY,
+  owner          TEXT NOT NULL,
+  agent_id       TEXT NOT NULL,
+  status         TEXT NOT NULL,            -- 'pending' | 'preflight' | 'allowed' | 'blocked' | 'executed' | 'failed'
+  proposed_action TEXT NOT NULL,
+  trace_json     TEXT,
+  context_digest TEXT,
+  result_json    TEXT,
+  block_reason   TEXT,
+  receipt_id     TEXT,
+  tx_hash        TEXT,
+  created_at     INTEGER NOT NULL,
+  updated_at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_executions_owner ON executions(owner);
+CREATE INDEX IF NOT EXISTS idx_executions_status ON executions(status);
 `;

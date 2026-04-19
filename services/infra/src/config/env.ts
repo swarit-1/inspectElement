@@ -78,6 +78,14 @@ const EnvSchema = z.object({
     .default("false")
     .transform((v) => v === "true"),
 
+  // Gemini advisory AI
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_SCREEN_HARD_MODE: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
+  GEMINI_SCREEN_HARD_THRESHOLD: z.coerce.number().min(0).max(1).default(0.8),
+
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal", "silent"])
     .default("info"),

@@ -29,6 +29,7 @@ import {
   setReceiptTraceUri,
   upsertReceipt,
 } from "../store/receipts.js";
+import { emitEvent } from "../api/sse.js";
 import { logger } from "../utils/logger.js";
 
 const ALL_ABI = [
@@ -103,6 +104,16 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
         { receiptId: args.receiptId, owner: args.owner, amount: (args.amount as bigint).toString() },
         "Indexed ActionReceipt",
       );
+      emitEvent({
+        type: "receipt.created",
+        data: {
+          receiptId: args.receiptId as string,
+          owner: args.owner as string,
+          agentId: args.agentId as string,
+          amount: (args.amount as bigint).toString(),
+          timestamp: Number(ts),
+        },
+      });
       return true;
     }
     case "ReceiptStored":
@@ -136,6 +147,15 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
         { challengeId: (args.challengeId as bigint).toString(), receiptId: args.receiptId },
         "Indexed ChallengeFiled",
       );
+      emitEvent({
+        type: "challenge.filed",
+        data: {
+          challengeId: (args.challengeId as bigint).toString(),
+          receiptId: args.receiptId as string,
+          challenger: args.challenger as string,
+          timestamp: Number(ts),
+        },
+      });
       return true;
     }
     case "ChallengeResolved": {
@@ -155,6 +175,15 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
         },
         "Indexed ChallengeResolved",
       );
+      emitEvent({
+        type: "challenge.resolved",
+        data: {
+          challengeId: (args.challengeId as bigint).toString(),
+          uphold: args.uphold as boolean,
+          payout: (args.payout as bigint).toString(),
+          timestamp: Number(ts),
+        },
+      });
       return true;
     }
     case "IntentCommitted": {

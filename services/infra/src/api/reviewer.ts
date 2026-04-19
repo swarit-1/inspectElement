@@ -11,6 +11,7 @@ import { challengeArbiterFunctions } from "../abi/index.js";
 import { loadDeployments, loadEnv } from "../config/env.js";
 import { resolveReviewerContext, Signer } from "../signer/index.js";
 import { logger } from "../utils/logger.js";
+import { requireRole } from "../middleware/auth.js";
 import { asyncHandler, badRequest, internal } from "./errors.js";
 
 /**
@@ -38,8 +39,18 @@ export function createReviewerRouter(): Router {
   const deployment = loadDeployments(env);
   const signer = Signer.fromEnv();
 
+  // Reviewer resolve is a privileged action — require reviewer or partner_admin role
+  // when auth is present. In demo/unauthenticated mode, the action proceeds
+  // but is logged as unauthenticated.
   router.post(
     "/resolve",
+    (req, res, next) => {
+      if (req.auth) {
+        return requireRole("reviewer", "partner_admin")(req, res, next);
+      }
+      logger.warn({ path: req.path }, "Reviewer resolve called without authentication — allowed in demo mode");
+      next();
+    },
     asyncHandler(async (req, res) => {
       const parsed = Body.safeParse(req.body);
       if (!parsed.success) throw badRequest("invalid reviewer body", parsed.error.flatten());
