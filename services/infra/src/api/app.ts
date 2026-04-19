@@ -3,25 +3,36 @@ import express, { type Express } from "express";
 import { pinoHttp } from "pino-http";
 import { loadEnv } from "../config/env.js";
 import { logger } from "../utils/logger.js";
-import { optionalAuth } from "../middleware/auth.js";
+import { optionalAuth, requireAuth } from "../middleware/auth.js";
+import type { ScreeningProvider } from "../screening/types.js";
 import { createAuthRouter } from "./auth.js";
 import { createChallengePrepareRouter } from "./challenges-prepare.js";
 import { errorMiddleware } from "./errors.js";
+import { createExecuteRouter } from "./execute.js";
 import { createFeedRouter } from "./feed.js";
 import { createHealthRouter } from "./health.js";
+import { createLiveFeedRouter, createFeedEventBus, type FeedEventBus } from "./live-feed.js";
 import { createLocalCasRouter } from "./local-cas.js";
 import { createManifestsRouter } from "./manifests.js";
 import { createReplayRouter } from "./replay.js";
 import { createReviewerRouter } from "./reviewer.js";
+import { createScreenRouter } from "./screen.js";
+import { createSummaryRouter } from "./summary.js";
 import { createTracesRouter } from "./traces.js";
 import { createScreenRouter } from "../gemini/screen.js";
 import { createReceiptSummaryRouter, createChallengeSummaryRouter } from "../gemini/summarize.js";
 import { createExecutionsRouter } from "./executions.js";
 import { createSSERouter } from "./sse.js";
 
-export function createApp(): Express {
+export interface AppOptions {
+  screeningProvider?: ScreeningProvider;
+  feedEventBus?: FeedEventBus;
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const env = loadEnv();
   const app = express();
+  const feedBus = options.feedEventBus ?? createFeedEventBus();
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -53,6 +64,24 @@ export function createApp(): Express {
   app.use("/v1/executions", createExecutionsRouter());
   app.use("/v1/events", createSSERouter());
   app.use("/ipfs", createLocalCasRouter());
+
+  // Execution API — partner/runtime-facing (requires auth)
+  app.use("/v1/execute", requireAuth("partner", "service"), createExecuteRouter());
+
+  // Live feed — SSE for real-time updates (requires auth)
+  app.use("/v1/feed", requireAuth("user", "partner"), createLiveFeedRouter(feedBus));
+
+  // Advisory screening & summaries (Gemini-powered, never authoritative)
+  if (options.screeningProvider) {
+    app.use("/v1/screen", createScreenRouter(options.screeningProvider));
+    app.use("/v1", createSummaryRouter(options.screeningProvider));
+  } else {
+    // Return 501 when screening is not configured so callers know the feature
+    // is disabled rather than receiving a misleading 404
+    app.use("/v1/screen", (_req, res) => {
+      res.status(501).json({ error: "feature_disabled", message: "Screening provider not configured" });
+    });
+  }
 
   app.use((req, res) => {
     res.status(404).json({ error: "not_found", path: req.path });
