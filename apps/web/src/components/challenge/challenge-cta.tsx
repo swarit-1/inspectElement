@@ -47,13 +47,11 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
     address: CONTRACT_ADDRESSES.usdc,
     abi: erc20Abi,
     functionName: "allowance",
-    args: address
-      ? [address, CONTRACT_ADDRESSES.challengeArbiter]
-      : [
-          "0x0000000000000000000000000000000000000000",
-          "0x0000000000000000000000000000000000000000",
-        ],
-    query: { enabled: allowanceEnabled },
+    args:
+      address && CONTRACT_ADDRESSES.challengeArbiter
+        ? [address, CONTRACT_ADDRESSES.challengeArbiter]
+        : undefined,
+    query: { enabled: !!(address && CONTRACT_ADDRESSES.challengeArbiter) },
   });
 
   const canChallenge =
@@ -110,53 +108,69 @@ export function ChallengeCTA({ receipt, onChallengeSubmitted }: ChallengeCTAProp
   if (!canChallenge) return null;
 
   return (
-    <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+    <section className="flex flex-col gap-5">
+      <header className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-text-primary">
-            Amount Violation Detected
+          <span className="eyebrow text-warning">● Recourse available</span>
+          <h3
+            className="font-display font-semibold tracking-tight text-text-primary mt-1.5"
+            style={{ fontSize: "var(--t-lg)" }}
+          >
+            File AmountViolation challenge
           </h3>
-          <p className="text-xs text-text-secondary mt-0.5">
-            This receipt ({formatUsdc(receipt.amount)} USDC) exceeds the per-tx cap
+          <p className="text-[12px] text-text-tertiary mt-1 max-w-[60ch]">
+            This receipt of {formatUsdc(receipt.amount)} USDC exceeds the
+            per-tx cap. Posting the bond opens a 24h dispute window; if upheld,
+            you&apos;re refunded from operator stake.
           </p>
         </div>
-        <StatusBadge variant="warning">Challengeable</StatusBadge>
-      </div>
+      </header>
 
-      {bondAmount && (
-        <div className="text-xs text-text-secondary">
-          Challenge bond: {formatUsdc(bondAmount)} USDC (refunded on success)
-        </div>
-      )}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[12px] tnum">
+        <dt className="eyebrow">Bond required</dt>
+        <dd className="font-mono text-text-secondary">
+          {bondAmount ? `${formatUsdc(bondAmount)} USDC` : "Computing…"}
+          <span className="text-text-quat ml-2">refunded on success</span>
+        </dd>
+        <dt className="eyebrow">Refund source</dt>
+        <dd className="font-mono text-text-secondary">Operator stake</dd>
+      </dl>
 
       {error && (
-        <p className="text-sm text-danger bg-danger-dim rounded-[--radius-md] px-3 py-2">
-          {error}
-        </p>
+        <div className="text-[12px] text-danger font-mono tnum">✕ {error}</div>
       )}
 
       {step === "submitted" ? (
-        <div className="bg-success-dim rounded-[--radius-md] px-4 py-3 text-sm text-success font-medium">
-          Challenge filed successfully. Awaiting resolution...
+        <div className="flex items-center gap-3 hairline-top pt-4">
+          <StatusBadge variant="success">Filed</StatusBadge>
+          <span className="font-mono text-[12px] tnum text-text-secondary">
+            Awaiting arbiter resolution…
+          </span>
         </div>
       ) : (
-        <Button
-          variant="danger"
-          onClick={() => void handleFileChallenge()}
-          loading={
-            step === "preparing" || step === "approving" || step === "filing"
-          }
-          disabled={step !== "idle" && step !== "error"}
-        >
-          {step === "preparing"
-            ? "Preparing..."
-            : step === "approving"
-              ? "Approving bond..."
-              : step === "filing"
-                ? "Filing challenge..."
-                : "File AmountViolation"}
-        </Button>
+        <div className="flex items-center gap-4 hairline-top pt-4">
+          <Button
+            variant="danger"
+            size="md"
+            onClick={() => void handleFileChallenge()}
+            loading={
+              step === "preparing" || step === "approving" || step === "filing"
+            }
+            disabled={step !== "idle" && step !== "error"}
+          >
+            {step === "preparing"
+              ? "Preparing…"
+              : step === "approving"
+                ? "Approving bond…"
+                : step === "filing"
+                  ? "Filing challenge…"
+                  : "File challenge"}
+          </Button>
+          <span className="font-mono text-[11px] tnum text-text-quat">
+            requires USDC approval + tx signature
+          </span>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

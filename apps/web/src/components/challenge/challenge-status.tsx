@@ -22,8 +22,9 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
 
   if (isLoading) {
     return (
-      <div className="text-sm text-text-tertiary py-4">
-        Loading challenge status...
+      <div className="py-6 flex items-center gap-3 text-[12px] font-mono text-text-tertiary tnum">
+        <span className="led-pulse h-1.5 w-1.5 rounded-full bg-text-tertiary" />
+        AWAITING ARBITER…
       </div>
     );
   }
@@ -35,51 +36,68 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
     challenge.status === "PENDING" || challenge.status === "FILED";
 
   return (
-    <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary">
-          Challenge #{challenge.challengeId}
-        </h3>
+    <section className="flex flex-col">
+      <header className="flex items-center justify-between hairline-top hairline-bottom py-4">
+        <div className="flex items-baseline gap-3">
+          <span className="seq tabular-nums">CHL · #{challenge.challengeId}</span>
+          <span
+            className="font-display font-semibold text-text-primary tracking-tight"
+            style={{ fontSize: "var(--t-md)" }}
+          >
+            {challenge.challengeType}
+          </span>
+        </div>
         <StatusBadge
           variant={
             isUpheld ? "success" : challenge.status === "REJECTED" ? "danger" : "info"
           }
         >
-          {isPending ? "PENDING" : challenge.status}
+          {isPending ? "Pending" : challenge.status}
         </StatusBadge>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-2 gap-4 text-xs">
-        <DataRow label="Type" value={challenge.challengeType} />
-        <DataRow label="Bond" value={`${formatUsdc(challenge.bondAmount)} USDC`} />
-        <DataRow
-          label="Challenger"
-          value={truncateAddress(challenge.challenger)}
-          mono
-        />
-        <DataRow
-          label="Receipt"
-          value={truncateAddress(challenge.receiptId)}
-          mono
-        />
+      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 py-5 text-[12px] tnum">
+        <dt className="eyebrow">Bond posted</dt>
+        <dd className="font-mono text-text-secondary">
+          {formatUsdc(challenge.bondAmount)} USDC
+        </dd>
+        <dt className="eyebrow">Challenger</dt>
+        <dd className="font-mono text-text-secondary">
+          {truncateAddress(challenge.challenger, 6)}
+        </dd>
+        <dt className="eyebrow">Receipt</dt>
+        <dd className="font-mono text-text-secondary">
+          {truncateAddress(challenge.receiptId, 6)}
+        </dd>
         {challenge.resolvedAt && (
-          <DataRow
-            label="Resolved"
-            value={new Date(challenge.resolvedAt * 1000).toLocaleString()}
-          />
+          <>
+            <dt className="eyebrow">Resolved at</dt>
+            <dd className="text-text-secondary">
+              {new Date(challenge.resolvedAt * 1000).toLocaleString()}
+            </dd>
+          </>
         )}
         {isUpheld && challenge.payoutAmount && (
-          <DataRow
-            label="Payout"
-            value={`${formatUsdc(challenge.payoutAmount)} USDC`}
-            highlight
-          />
+          <>
+            <dt className="eyebrow text-success">Payout</dt>
+            <dd className="font-mono text-success font-semibold">
+              +{formatUsdc(challenge.payoutAmount)} USDC
+            </dd>
+          </>
         )}
-      </div>
+      </dl>
 
       {isUpheld && (
-        <div className="bg-success-dim rounded-[--radius-md] px-4 py-3 text-sm text-success font-medium">
-          Challenge upheld. {challenge.payoutAmount && `${formatUsdc(challenge.payoutAmount)} USDC`} returned to owner from operator stake.
+        <div className="hairline-top pt-4 text-[13px] text-success">
+          ● Challenge upheld.{" "}
+          {challenge.payoutAmount && (
+            <>
+              <span className="font-mono tnum font-semibold">
+                {formatUsdc(challenge.payoutAmount)} USDC
+              </span>{" "}
+              returned to owner from operator stake.
+            </>
+          )}
         </div>
       )}
 
@@ -88,38 +106,11 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
           href={`https://sepolia.basescan.org/tx/${challenge.txHash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-accent hover:underline"
+          className="mt-4 font-mono text-[11px] tnum text-text-tertiary hover:text-accent-bright underline-offset-4 hover:underline"
         >
-          View on BaseScan
+          tx · {truncateAddress(challenge.txHash, 6)} ↗
         </a>
       )}
-    </div>
-  );
-}
-
-function DataRow({
-  label,
-  value,
-  mono,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-text-tertiary uppercase tracking-wider">
-        {label}
-      </span>
-      <span
-        className={`${mono ? "font-mono" : ""} ${
-          highlight ? "text-success font-semibold" : "text-text-secondary"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
+    </section>
   );
 }
