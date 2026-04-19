@@ -37,7 +37,21 @@ const EnvSchema = z.object({
   HOST: z.string().default("0.0.0.0"),
   CORS_ORIGIN: z.string().default("*"),
 
+  // Database provider: "sqlite" (legacy) or "supabase" (production)
+  DATABASE_PROVIDER: z
+    .enum(["sqlite", "supabase"])
+    .default("supabase"),
+
+  // SQLite (only used when DATABASE_PROVIDER=sqlite)
   DATABASE_URL: z.string().default("./data/infra.db"),
+
+  // Supabase (only used when DATABASE_PROVIDER=supabase)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+
+  // Auth
+  JWT_SECRET: z.string().optional(),
 
   TRACE_ACK_PRIVATE_KEY: z
     .string()

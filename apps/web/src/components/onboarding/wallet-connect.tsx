@@ -1,9 +1,10 @@
 "use client";
 
-import { useAccount, useConnect, useConnectors, useDisconnect } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { usePrivy } from "@privy-io/react-auth";
+import { useAccount, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { truncateAddress, CONTRACT_ADDRESSES } from "@/lib/constants";
+import { PRIVY_APP_ID } from "@/lib/privy";
 
 interface WalletConnectProps {
   onConnected: () => void;
@@ -13,42 +14,99 @@ interface WalletConnectProps {
  * Landing-left column. Identifies the product, lists the three pillars, and
  * hands off to the dashboard once a wallet is connected. No fake deploy step
  * — GuardedExecutor is a shared protocol contract, not a per-user artifact.
+ *
+ * Auth: Privy handles account creation (email) and wallet login (MetaMask,
+ * Coinbase Wallet, WalletConnect). After sign-in, wagmi reflects the active wallet.
  */
 export function WalletConnect({ onConnected }: WalletConnectProps) {
+  const {
+    ready,
+    authenticated,
+    login,
+    logout,
+    connectWallet,
+    linkWallet,
+  } = usePrivy();
   const { address, isConnected } = useAccount();
-  const connectors = useConnectors();
-  const { connect, isPending: isConnecting, error: connectError, reset } =
-    useConnect();
   const { disconnect } = useDisconnect();
 
-  function handleConnect() {
-    reset();
-    const connector =
-      connectors.find((c) => c.id === "injected" || c.type === "injected") ??
-      connectors[0] ??
-      injected();
-    connect(
-      { connector },
-      { onSuccess: () => onConnected() }
+  if (!PRIVY_APP_ID) {
+    return (
+      <div className="flex flex-col gap-6 text-[13px] text-text-secondary max-w-[52ch]">
+        <p>
+          Add{" "}
+          <span className="font-mono text-text-primary">
+            NEXT_PUBLIC_PRIVY_APP_ID
+          </span>{" "}
+          to your environment to enable sign-in and wallet linking.
+        </p>
+      </div>
     );
   }
 
-  const connectErrorMessage = connectError
-    ? formatWalletError(connectError)
-    : null;
-
-  if (isConnected && address) {
+  if (!ready) {
     return (
       <div className="flex flex-col gap-8">
-        <ConnectedKey address={address} onDisconnect={() => disconnect()} />
+        <span className="font-mono text-[11px] tnum text-text-tertiary">
+          Loading…
+        </span>
+      </div>
+    );
+  }
+
+  if (authenticated && isConnected && address) {
+    return (
+      <div className="flex flex-col gap-8">
+        <ConnectedKey
+          address={address}
+          onDisconnect={() => {
+            void logout();
+            disconnect();
+          }}
+        />
         <ProtocolReadout />
-        <div className="hairline-top pt-6 flex items-center gap-5 flex-wrap">
-          <Button size="md" onClick={onConnected}>
-            Enter vault →
+        <div className="hairline-top pt-6 flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => linkWallet()}
+            >
+              Link another wallet
+            </Button>
+            <span className="font-mono text-[11px] tnum text-text-tertiary">
+              MetaMask, Coinbase, WalletConnect
+            </span>
+          </div>
+          <div className="flex items-center gap-5 flex-wrap">
+            <Button size="md" onClick={onConnected}>
+              Enter vault →
+            </Button>
+            <span className="font-mono text-[11px] tnum text-text-tertiary">
+              opens dashboard
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authenticated && !isConnected) {
+    return (
+      <div className="flex flex-col gap-12">
+        <LandingCopy />
+        <div className="flex flex-col gap-3 hairline-top pt-6">
+          <div className="flex flex-wrap items-center gap-5">
+            <Button size="lg" onClick={() => connectWallet()}>
+              Connect wallet →
+            </Button>
+            <span className="font-mono text-[11px] tnum text-text-tertiary">
+              Base Sepolia · MetaMask or Coinbase Wallet
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => void logout()}>
+            Sign out
           </Button>
-          <span className="font-mono text-[11px] tnum text-text-tertiary">
-            opens dashboard
-          </span>
         </div>
       </div>
     );
@@ -56,33 +114,8 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
 
   return (
     <div className="flex flex-col gap-12">
-      {/* Brand stamp + tagline — left-aligned editorial */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <span className="seq tabular-nums">00 / IDENTIFY</span>
-          <span className="h-px flex-1 bg-rule" />
-        </div>
+      <LandingCopy />
 
-        <div>
-          <h1
-            className="font-display font-semibold tracking-tight text-text-primary leading-[0.95]"
-            style={{ fontSize: "var(--t-4xl)" }}
-          >
-            Intent
-            <span className="text-accent">Guard</span>
-          </h1>
-          <p
-            className="mt-5 text-text-secondary leading-relaxed max-w-[42ch]"
-            style={{ fontSize: "var(--t-md)" }}
-          >
-            A vault door between your USDC and an autonomous agent. Set the
-            spend envelope, monitor every action, dispute what shouldn&apos;t
-            have happened.
-          </p>
-        </div>
-      </div>
-
-      {/* Three pillars — flat, no cards */}
       <ul className="flex flex-col">
         <Pillar
           seq="01"
@@ -101,52 +134,51 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
         />
       </ul>
 
-      {/* Action bar */}
       <div className="flex flex-col gap-3 hairline-top pt-6">
         <div className="flex flex-wrap items-center gap-5">
-          <Button
-            size="lg"
-            onClick={handleConnect}
-            loading={isConnecting}
-            disabled={isConnecting}
-          >
-            Connect wallet →
+          <Button size="lg" onClick={() => login()}>
+            Sign in →
           </Button>
           <span className="font-mono text-[11px] tnum text-text-tertiary">
-            Base Sepolia · injected wallet
+            Email or wallet · Base Sepolia
           </span>
         </div>
-        {connectErrorMessage && (
-          <p
-            role="alert"
-            aria-live="polite"
-            className="text-[13px] text-danger leading-relaxed max-w-[52ch]"
-          >
-            {connectErrorMessage}
-          </p>
-        )}
+        <p className="text-[13px] text-text-tertiary leading-relaxed max-w-[52ch]">
+          Create an account with email, or connect MetaMask / Coinbase Wallet.
+          You can link additional wallets after you sign in.
+        </p>
       </div>
     </div>
   );
 }
 
-function formatWalletError(err: Error): string {
-  const msg = (err as { shortMessage?: string }).shortMessage ?? err.message ?? "";
-  const lower = msg.toLowerCase();
-  if (
-    lower.includes("user rejected") ||
-    lower.includes("user denied") ||
-    err.name === "UserRejectedRequestError"
-  ) {
-    return "Connection was cancelled in your wallet.";
-  }
-  if (lower.includes("chain") && lower.includes("mismatch")) {
-    return "Wrong network — switch to Base Sepolia in your wallet and try again.";
-  }
-  if (lower.includes("no provider") || lower.includes("injected") || lower.includes("not installed")) {
-    return "No injected wallet detected. Install MetaMask or a Base-compatible wallet and try again.";
-  }
-  return msg || "Could not connect wallet. Try again.";
+function LandingCopy() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <span className="seq tabular-nums">00 / IDENTIFY</span>
+        <span className="h-px flex-1 bg-rule" />
+      </div>
+
+      <div>
+        <h1
+          className="font-display font-semibold tracking-tight text-text-primary leading-[0.95]"
+          style={{ fontSize: "var(--t-4xl)" }}
+        >
+          Intent
+          <span className="text-accent">Guard</span>
+        </h1>
+        <p
+          className="mt-5 text-text-secondary leading-relaxed max-w-[42ch]"
+          style={{ fontSize: "var(--t-md)" }}
+        >
+          A vault door between your USDC and an autonomous agent. Set the spend
+          envelope, monitor every action, dispute what shouldn&apos;t have
+          happened.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function Pillar({ seq, name, desc }: { seq: string; name: string; desc: string }) {
@@ -188,7 +220,7 @@ function ConnectedKey({
         </div>
       </div>
       <Button variant="ghost" size="sm" onClick={onDisconnect}>
-        Disconnect
+        Sign out
       </Button>
     </div>
   );

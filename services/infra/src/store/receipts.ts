@@ -1,5 +1,5 @@
 import type { Address, Hex } from "viem";
-import { getDb } from "./db.js";
+import { db, getDb, getProvider } from "./db.js";
 
 export interface ReceiptRow {
   receiptId: Hex;
@@ -12,7 +12,7 @@ export interface ReceiptRow {
   callDataHash: Hex;
   contextDigest: Hex;
   nonce: bigint;
-  ts: number; // block timestamp seconds
+  ts: number;
   traceUri: string | null;
   blockNumber: number;
   txHash: Hex;
@@ -37,72 +37,128 @@ export interface InsertReceiptInput {
   logIndex: number;
 }
 
-export function upsertReceipt(input: InsertReceiptInput): void {
-  const db = getDb();
+export async function upsertReceipt(input: InsertReceiptInput): Promise<void> {
   const createdAt = Math.floor(Date.now() / 1000);
-  db.prepare(
-    `INSERT INTO receipts (
-       receipt_id, owner, agent_id, intent_hash, target, token, amount,
-       call_data_hash, context_digest, nonce, ts, block_number, tx_hash,
-       log_index, created_at
-     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-     ON CONFLICT(receipt_id) DO UPDATE SET
-       owner = excluded.owner,
-       agent_id = excluded.agent_id,
-       intent_hash = excluded.intent_hash,
-       target = excluded.target,
-       token = excluded.token,
-       amount = excluded.amount,
-       call_data_hash = excluded.call_data_hash,
-       context_digest = excluded.context_digest,
-       nonce = excluded.nonce,
-       ts = excluded.ts,
-       block_number = excluded.block_number,
-       tx_hash = excluded.tx_hash,
-       log_index = excluded.log_index`,
-  ).run(
-    input.receiptId.toLowerCase(),
-    input.owner.toLowerCase(),
-    input.agentId.toLowerCase(),
-    input.intentHash.toLowerCase(),
-    input.target.toLowerCase(),
-    input.token.toLowerCase(),
-    input.amount.toString(10),
-    input.callDataHash.toLowerCase(),
-    input.contextDigest.toLowerCase(),
-    input.nonce.toString(10),
-    Number(input.ts),
-    Number(input.blockNumber),
-    input.txHash.toLowerCase(),
-    input.logIndex,
-    createdAt,
-  );
+  const row = {
+    receipt_id: input.receiptId.toLowerCase(),
+    owner: input.owner.toLowerCase(),
+    agent_id: input.agentId.toLowerCase(),
+    intent_hash: input.intentHash.toLowerCase(),
+    target: input.target.toLowerCase(),
+    token: input.token.toLowerCase(),
+    amount: input.amount.toString(10),
+    call_data_hash: input.callDataHash.toLowerCase(),
+    context_digest: input.contextDigest.toLowerCase(),
+    nonce: input.nonce.toString(10),
+    ts: Number(input.ts),
+    block_number: Number(input.blockNumber),
+    tx_hash: input.txHash.toLowerCase(),
+    log_index: input.logIndex,
+    created_at: createdAt,
+  };
+
+  if (getProvider() === "sqlite") {
+    const sqliteDb = getDb();
+    sqliteDb
+      .prepare(
+        `INSERT INTO receipts (
+           receipt_id, owner, agent_id, intent_hash, target, token, amount,
+           call_data_hash, context_digest, nonce, ts, block_number, tx_hash,
+           log_index, created_at
+         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(receipt_id) DO UPDATE SET
+           owner = excluded.owner,
+           agent_id = excluded.agent_id,
+           intent_hash = excluded.intent_hash,
+           target = excluded.target,
+           token = excluded.token,
+           amount = excluded.amount,
+           call_data_hash = excluded.call_data_hash,
+           context_digest = excluded.context_digest,
+           nonce = excluded.nonce,
+           ts = excluded.ts,
+           block_number = excluded.block_number,
+           tx_hash = excluded.tx_hash,
+           log_index = excluded.log_index`,
+      )
+      .run(
+        row.receipt_id,
+        row.owner,
+        row.agent_id,
+        row.intent_hash,
+        row.target,
+        row.token,
+        row.amount,
+        row.call_data_hash,
+        row.context_digest,
+        row.nonce,
+        row.ts,
+        row.block_number,
+        row.tx_hash,
+        row.log_index,
+        row.created_at,
+      );
+  } else {
+    await db()
+      .from("receipts")
+      .upsert(row, { onConflict: "receipt_id" });
+  }
 }
 
-export function setReceiptTraceUri(receiptId: Hex, traceUri: string): void {
-  const db = getDb();
-  db.prepare(`UPDATE receipts SET trace_uri = ? WHERE receipt_id = ?`).run(
-    traceUri,
-    receiptId.toLowerCase(),
-  );
+export async function setReceiptTraceUri(receiptId: Hex, traceUri: string): Promise<void> {
+  const key = receiptId.toLowerCase();
+
+  if (getProvider() === "sqlite") {
+    const sqliteDb = getDb();
+    sqliteDb.prepare(`UPDATE receipts SET trace_uri = ? WHERE receipt_id = ?`).run(traceUri, key);
+  } else {
+    await db()
+      .from("receipts")
+      .update({ trace_uri: traceUri })
+      .eq("receipt_id", key);
+  }
 }
 
-export function getReceipt(receiptId: Hex): ReceiptRow | null {
-  const db = getDb();
-  const row = db
-    .prepare(`SELECT * FROM receipts WHERE receipt_id = ?`)
-    .get(receiptId.toLowerCase()) as Record<string, unknown> | undefined;
-  return row ? rowToReceipt(row) : null;
+export async function getReceipt(receiptId: Hex): Promise<ReceiptRow | null> {
+  const key = receiptId.toLowerCase();
+
+  if (getProvider() === "sqlite") {
+    const sqliteDb = getDb();
+    const row = sqliteDb
+      .prepare(`SELECT * FROM receipts WHERE receipt_id = ?`)
+      .get(key) as Record<string, unknown> | undefined;
+    return row ? rowToReceipt(row) : null;
+  }
+
+  const { data } = await db()
+    .from("receipts")
+    .select("*")
+    .eq("receipt_id", key)
+    .single();
+  return data ? rowToReceipt(data) : null;
 }
 
-export function listReceiptsByOwner(owner: Address, limit = 100): ReceiptRow[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT * FROM receipts WHERE owner = ? ORDER BY block_number DESC, log_index DESC LIMIT ?`,
-    )
-    .all(owner.toLowerCase(), limit) as Record<string, unknown>[];
-  return rows.map(rowToReceipt);
+export async function listReceiptsByOwner(owner: Address, limit = 100): Promise<ReceiptRow[]> {
+  const key = owner.toLowerCase();
+
+  if (getProvider() === "sqlite") {
+    const sqliteDb = getDb();
+    const rows = sqliteDb
+      .prepare(
+        `SELECT * FROM receipts WHERE owner = ? ORDER BY block_number DESC, log_index DESC LIMIT ?`,
+      )
+      .all(key, limit) as Record<string, unknown>[];
+    return rows.map(rowToReceipt);
+  }
+
+  const { data } = await db()
+    .from("receipts")
+    .select("*")
+    .eq("owner", key)
+    .order("block_number", { ascending: false })
+    .order("log_index", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map(rowToReceipt);
 }
 
 function rowToReceipt(row: Record<string, unknown>): ReceiptRow {

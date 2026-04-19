@@ -12,6 +12,7 @@ import {
   getAddress,
   http,
   type Account,
+  type Address,
   type Hex,
 } from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
@@ -49,7 +50,7 @@ export interface AgentEnv {
   /** Operator/delegate account (viem). Backed by either CDP or a raw key. */
   readonly account: Account;
   readonly ownerAccount: PrivateKeyAccount;
-  readonly ownerAddress: Hex;
+  readonly ownerAddress: Address;
   readonly agentId: Hex;
   readonly rpcUrl: string;
   readonly traceServiceUrl: string;
@@ -61,16 +62,22 @@ export interface AgentEnv {
  *
  * Async because the operator account may be sourced from a Coinbase
  * Server Wallet (one network round-trip on the first call per process,
- * cached thereafter).
+ * cached thereafter). `ownerAddressOverride` lets the live runtime target
+ * whatever wallet is currently connected in the web app.
  */
-export async function loadAgentEnv(): Promise<AgentEnv> {
+export async function loadAgentEnv(
+  ownerAddressOverride?: Address
+): Promise<AgentEnv> {
   const runtime = loadRuntimeEnv();
   const { account, agentId } = await loadAgentAccount(runtime);
+  const ownerAddress = ownerAddressOverride
+    ? getAddress(ownerAddressOverride)
+    : runtime.ownerAccount.address;
   return {
     operatorKey: runtime.operatorKey,
     account,
     ownerAccount: runtime.ownerAccount,
-    ownerAddress: runtime.ownerAccount.address,
+    ownerAddress,
     agentId,
     rpcUrl: runtime.rpcUrl,
     traceServiceUrl: runtime.traceServiceUrl,

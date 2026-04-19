@@ -140,7 +140,7 @@ describe("Indexer decoder — synthetic logs against my ABI fragments", () => {
     const handled = await handleLog(log, ctx);
     expect(handled).toBe(true);
 
-    const row = getReceipt(RECEIPT_ID);
+    const row = await getReceipt(RECEIPT_ID);
     expect(row).not.toBeNull();
     expect(row!.amount).toBe(15_000_000n);
     expect(row!.nonce).toBe(7n);
@@ -179,7 +179,7 @@ describe("Indexer decoder — synthetic logs against my ABI fragments", () => {
     });
     expect(await handleLog(resolved, ctx)).toBe(true);
 
-    const c = getChallenge("99");
+    const c = await getChallenge("99");
     expect(c).not.toBeNull();
     expect(c!.status).toBe("UPHELD");
     expect(c!.payout).toBe(15_000_000n);
@@ -201,7 +201,7 @@ describe("Indexer decoder — synthetic logs against my ABI fragments", () => {
     });
     expect(await handleLog(log, ctx)).toBe(true);
 
-    const intents = listIntentsByOwner(OWNER);
+    const intents = await listIntentsByOwner(OWNER);
     expect(intents.find((i) => i.intentHash.toLowerCase() === INTENT_HASH.toLowerCase())).toBeDefined();
   });
 
@@ -304,17 +304,17 @@ describe("IndexerPoller cursor advances + resumes", () => {
     const env = (await import("../src/config/env.js")).loadEnv();
     const poller = new IndexerPoller(env, fakeDeployment(), FakeClient(2_000n));
     await poller.catchUp();
-    const last = getMeta(META_LAST_INDEXED_BLOCK);
+    const last = await getMeta(META_LAST_INDEXED_BLOCK);
     expect(last).not.toBeNull();
     expect(BigInt(last!)).toBeGreaterThanOrEqual(2_000n);
   });
 
   it("resumes from the cursor on a second catchUp (does not regress)", async () => {
     const env = (await import("../src/config/env.js")).loadEnv();
-    const before = BigInt(getMeta(META_LAST_INDEXED_BLOCK) ?? "0");
+    const before = BigInt((await getMeta(META_LAST_INDEXED_BLOCK)) ?? "0");
     const poller2 = new IndexerPoller(env, fakeDeployment(), FakeClient(before + 5n));
     await poller2.catchUp();
-    const after = BigInt(getMeta(META_LAST_INDEXED_BLOCK)!);
+    const after = BigInt((await getMeta(META_LAST_INDEXED_BLOCK))!);
     expect(after).toBeGreaterThanOrEqual(before);
     expect(after).toBeGreaterThanOrEqual(before + 5n);
   });

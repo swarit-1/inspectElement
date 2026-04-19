@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.22.1",
+    "@privy-io/wagmi": "^4.0.5",
     "@tanstack/react-query": "^5.99.1",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "siwe": "^3.0.0",
     "viem": "^2.47.4",
     "wagmi": "^3.6.3"
   },

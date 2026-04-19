@@ -13,21 +13,28 @@ const MOCK_ENV = {
 } as const;
 
 describe("createDemoControlApp", () => {
-  it("runs the legit scenario and exposes the latest success via /demo/status", async () => {
+  it("runs the legit scenario for the requested owner and exposes the latest success via /demo/status", async () => {
     const runExecuteFlow = vi.fn(async () => ({
       scenario: "legit",
       outcome: "success" as const,
       txHash: "0xabc",
       receiptId: "0xdef",
     }));
+    const loadAgentEnv = vi.fn(async (ownerAddress?: `0x${string}`) => ({
+      ...MOCK_ENV,
+      ownerAddress: ownerAddress ?? MOCK_ENV.ownerAddress,
+    }));
 
     const app = createDemoControlApp({
-      loadAgentEnv: async () => MOCK_ENV as never,
+      loadAgentEnv: loadAgentEnv as never,
       runExecuteFlow,
       createScenarioId: () => "scenario-legit",
     });
 
-    const start = await invokeRoute(app, "post", "/demo/run-legit");
+    const requestedOwner = ("0x" + "55".repeat(20)) as `0x${string}`;
+    const start = await invokeRoute(app, "post", "/demo/run-legit", {
+      ownerAddress: requestedOwner,
+    });
     expect(start.statusCode).toBe(200);
     expect(start.body).toEqual({
       status: "running",
@@ -46,7 +53,11 @@ describe("createDemoControlApp", () => {
       receiptId: "0xdef",
       error: null,
     });
-    expect(runExecuteFlow).toHaveBeenCalledWith("legit", MOCK_ENV);
+    expect(loadAgentEnv).toHaveBeenCalledWith(requestedOwner);
+    expect(runExecuteFlow).toHaveBeenCalledWith(
+      "legit",
+      expect.objectContaining({ ownerAddress: requestedOwner })
+    );
   });
 
   it("uses the preflight-only flow for blocked runs", async () => {
@@ -108,12 +119,47 @@ describe("createDemoControlApp", () => {
       error: "trace upload failed",
     });
   });
+
+  it("exposes live runtime config for the dashboard", async () => {
+    const app = createDemoControlApp({
+      loadAgentEnv: async () => MOCK_ENV as never,
+    });
+
+    const response = await invokeRoute(app, "get", "/demo/config");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      agentId: MOCK_ENV.agentId,
+      operatorAddress: MOCK_ENV.account.address,
+      ownerAddress: MOCK_ENV.ownerAddress,
+      signerProvider: MOCK_ENV.signerProvider,
+    });
+  });
+
+  it("rejects malformed owner addresses", async () => {
+    const runExecuteFlow = vi.fn();
+    const app = createDemoControlApp({
+      loadAgentEnv: async () => MOCK_ENV as never,
+      runExecuteFlow,
+    });
+
+    const response = await invokeRoute(app, "post", "/demo/run-legit", {
+      ownerAddress: "not-an-address",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({
+      message: "ownerAddress must be a valid address",
+    });
+    expect(runExecuteFlow).not.toHaveBeenCalled();
+  });
 });
 
 async function invokeRoute(
   app: Application,
   method: "get" | "post",
-  path: string
+  path: string,
+  bodyInput?: Record<string, unknown>
 ): Promise<{
   readonly statusCode: number;
   readonly body: unknown;
@@ -124,6 +170,10 @@ async function invokeRoute(
 
   const res = {
     header: () => res,
+    status: (code: number) => {
+      statusCode = code;
+      return res;
+    },
     json: (payload: unknown) => {
       body = payload;
       return res;
@@ -136,7 +186,7 @@ async function invokeRoute(
 
   await Promise.resolve(
     handler(
-      { body: {}, params: {}, query: {} },
+      { body: bodyInput ?? {}, params: {}, query: {} },
       res,
       () => undefined
     )

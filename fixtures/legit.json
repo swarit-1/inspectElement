@@ -58,7 +58,7 @@
     ],
     "proposedAction": {
       "target": "0x0000000000000000000000000000000000000a01",
-      "token": "0x0000000000000000000000000000000000USDC01",
+      "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
       "amount": "2000000",
       "callData": "0x",
       "rationale": "User authorized 2 USDC payment to allowlisted merchant for data subscription service. Amount is within per-tx cap (10 USDC) and per-day cap (50 USDC)."

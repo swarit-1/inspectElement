@@ -56,14 +56,14 @@ export function createManifestsRouter(): Router {
         metadata: (parsed.data.metadata as Record<string, unknown> | null | undefined) ?? null,
       });
 
-      const cached = getManifestByHash(intentHash);
+      const cached = await getManifestByHash(intentHash);
       if (cached) {
         res.json({ manifestURI: cached.manifestUri, intentHash });
         return;
       }
 
       const pin = await pinner.pin(json, `manifest-${intentHash.slice(2, 10)}.json`);
-      insertManifest({
+      await insertManifest({
         intentHash,
         manifestUri: pin.uri,
         manifestJson: json,
@@ -91,7 +91,7 @@ export function createManifestsRouter(): Router {
       if (!/^0x[0-9a-fA-F]{64}$/.test(intentHash)) {
         throw badRequest("intentHash must be a 0x-prefixed 32-byte hex string");
       }
-      const row = getManifestByHash(intentHash as `0x${string}`);
+      const row = await getManifestByHash(intentHash as `0x${string}`);
       if (!row) {
         res.status(404).json({ error: "not_found" });
         return;

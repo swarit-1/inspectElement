@@ -16,7 +16,7 @@ export function createHealthRouter(): Router {
   const deployment = loadDeployments(env);
   const signer = Signer.fromEnv();
 
-  router.get("/", (_req, res) => {
+  router.get("/", async (_req, res) => {
     res.json({
       ok: true,
       service: "intentguard-infra",
@@ -24,7 +24,7 @@ export function createHealthRouter(): Router {
       traceAckSigner: signer.traceAck.address,
       reviewerSigner: signer.reviewer?.address ?? null,
       contracts: deployment?.contracts ?? null,
-      lastIndexedBlock: getMeta(META_LAST_INDEXED_BLOCK),
+      lastIndexedBlock: await getMeta(META_LAST_INDEXED_BLOCK),
       traceAckTtlSeconds: env.TRACE_ACK_TTL_SECONDS,
     });
   });

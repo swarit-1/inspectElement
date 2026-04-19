@@ -13,6 +13,7 @@
 import express from "express";
 import { randomUUID } from "crypto";
 import { pathToFileURL } from "url";
+import { getAddress, type Address } from "viem";
 import {
   loadAgentEnv,
   runExecuteFlow,
@@ -48,7 +49,7 @@ export function createDemoControlApp(
   app.use((_req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     next();
   });
 
@@ -56,11 +57,33 @@ export function createDemoControlApp(
     res.sendStatus(204);
   });
 
+  app.get("/demo/config", async (_req, res) => {
+    try {
+      const env = await resolveEnv();
+      res.json({
+        agentId: env.agentId,
+        operatorAddress: env.account.address,
+        ownerAddress: env.ownerAddress,
+        signerProvider: env.signerProvider,
+      });
+    } catch (err) {
+      res.status(500).json({
+        message:
+          err instanceof Error ? err.message : "Unable to resolve demo config",
+      });
+    }
+  });
+
   /**
    * POST /demo/run-legit
    * Triggers the legitimate 2 USDC payment agent.
    */
-  app.post("/demo/run-legit", async (_req, res) => {
+  app.post("/demo/run-legit", async (req, res) => {
+    const ownerAddress = parseOwnerAddress(req.body);
+    if (ownerAddress === null) {
+      res.status(400).json({ message: "ownerAddress must be a valid address" });
+      return;
+    }
     const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
@@ -68,7 +91,7 @@ export function createDemoControlApp(
 
     // Run asynchronously — status polled via GET /demo/status
     try {
-      const env = await resolveEnv();
+      const env = await resolveEnv(ownerAddress ?? undefined);
       const result = await executeFlow("legit", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
@@ -84,14 +107,19 @@ export function createDemoControlApp(
    * POST /demo/run-blocked
    * Triggers the blocked attack agent (preflight only).
    */
-  app.post("/demo/run-blocked", async (_req, res) => {
+  app.post("/demo/run-blocked", async (req, res) => {
+    const ownerAddress = parseOwnerAddress(req.body);
+    if (ownerAddress === null) {
+      res.status(400).json({ message: "ownerAddress must be a valid address" });
+      return;
+    }
     const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = await resolveEnv();
+      const env = await resolveEnv(ownerAddress ?? undefined);
       const result = await preflightOnlyFlow(env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
@@ -107,14 +135,19 @@ export function createDemoControlApp(
    * POST /demo/run-overspend
    * Triggers the overspend agent (15 USDC, slash-only).
    */
-  app.post("/demo/run-overspend", async (_req, res) => {
+  app.post("/demo/run-overspend", async (req, res) => {
+    const ownerAddress = parseOwnerAddress(req.body);
+    if (ownerAddress === null) {
+      res.status(400).json({ message: "ownerAddress must be a valid address" });
+      return;
+    }
     const scenarioId = createScenarioId();
     demoState.startRun(scenarioId);
 
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = await resolveEnv();
+      const env = await resolveEnv(ownerAddress ?? undefined);
       const result = await executeFlow("overspend", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
@@ -170,6 +203,7 @@ export function startDemoControlServer(
   app.listen(PORT, () => {
     console.log(`[demo-control] Listening on :${PORT}`);
     console.log("[demo-control] Endpoints:");
+    console.log("  GET  /demo/config");
     console.log("  POST /demo/run-legit");
     console.log("  POST /demo/run-blocked");
     console.log("  POST /demo/run-overspend");
@@ -185,4 +219,13 @@ function isMainModule(): boolean {
 
 if (isMainModule()) {
   startDemoControlServer();
+}
+
+function parseOwnerAddress(body: unknown): Address | null | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  const ownerAddress = (body as { ownerAddress?: unknown }).ownerAddress;
+  if (ownerAddress == null || ownerAddress === "") return undefined;
+  if (typeof ownerAddress !== "string") return null;
+  if (!/^0x[0-9a-fA-F]{40}$/.test(ownerAddress)) return null;
+  return getAddress(ownerAddress);
 }

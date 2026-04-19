@@ -71,7 +71,7 @@ export function createTracesRouter(): Router {
 
       const ctx = resolveTraceAckContext();
 
-      const cached = getTraceByDigest(contextDigest as Hex);
+      const cached = await getTraceByDigest(contextDigest as Hex);
       if (cached && cached.expiresAt > BigInt(Math.floor(Date.now() / 1000))) {
         res.json({
           traceURI: cached.traceUri,
@@ -105,7 +105,7 @@ export function createTracesRouter(): Router {
         ctx,
       );
 
-      insertTrace({
+      await insertTrace({
         contextDigest: contextDigest as Hex,
         traceUri: pin.uri,
         uriHash,

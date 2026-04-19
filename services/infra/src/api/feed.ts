@@ -28,13 +28,6 @@ import { asyncHandler, badRequest, notFound } from "./errors.js";
  *   GET /v1/feed?owner=0x…       → newest-first list of receipts/challenges/intents/blocked
  *   GET /v1/receipts/:receiptId  → receipt detail with challengeable flag + window
  *   GET /v1/challenges/:id       → challenge detail
- *
- * The feed merges:
- *   - on-chain receipts (indexed)
- *   - on-chain challenges (indexed)
- *   - on-chain intents (indexed)
- *   - blocked attempts (server-side merge from Dev 2's /demo/status — see
- *     `indexer/demo-status.ts`). Dev 4 may also fall back to client-side merge.
  */
 
 const FeedQuery = z.object({
@@ -66,19 +59,22 @@ export function createFeedRouter(): Router {
       const owner = parsed.data.owner.toLowerCase() as Address;
       const limit = parsed.data.limit ?? 100;
 
-      const receipts = listReceiptsByOwner(owner, limit);
-      const challenges = listChallengesByOwner(owner, limit);
-      const intents = listIntentsByOwner(owner, limit);
-      const blocked = listBlockedByOwner(owner, limit);
+      const [receipts, challenges, intents, blocked] = await Promise.all([
+        listReceiptsByOwner(owner, limit),
+        listChallengesByOwner(owner, limit),
+        listIntentsByOwner(owner, limit),
+        listBlockedByOwner(owner, limit),
+      ]);
 
       const entries: FeedEntry[] = [];
 
       for (const r of receipts) {
-        const challenge = findChallengeByReceipt(r.receiptId);
+        const challenge = await findChallengeByReceipt(r.receiptId);
         const filed = challenge?.status === "FILED" || challenge?.status === "UPHELD";
         const windowEndsAt = r.ts + challengeWindowSec;
+        const overspendInfo = await getOverspendInfo(r.intentHash, r.amount);
         const overspendable =
-          getOverspendInfo(r.intentHash, r.amount).overspend && !filed && windowEndsAt > nowSec();
+          overspendInfo.overspend && !filed && windowEndsAt > nowSec();
         const entry: FeedReceiptEntry = {
           type: "receipt",
           id: `receipt:${r.receiptId}`,
@@ -157,13 +153,13 @@ export function createFeedRouter(): Router {
     asyncHandler(async (req, res) => {
       const parsed = ReceiptParams.safeParse(req.params);
       if (!parsed.success) throw badRequest("invalid receiptId");
-      const r = getReceipt(parsed.data.receiptId as Hex);
+      const r = await getReceipt(parsed.data.receiptId as Hex);
       if (!r) throw notFound("receipt not found");
 
-      const challenge = findChallengeByReceipt(r.receiptId);
+      const challenge = await findChallengeByReceipt(r.receiptId);
       const filed = !!challenge && challenge.status !== "REJECTED";
       const windowEndsAt = r.ts + challengeWindowSec;
-      const { overspend } = getOverspendInfo(r.intentHash, r.amount);
+      const { overspend } = await getOverspendInfo(r.intentHash, r.amount);
 
       const detail: ReceiptDetail = {
         receiptId: r.receiptId,
@@ -193,7 +189,7 @@ export function createFeedRouter(): Router {
     asyncHandler(async (req, res) => {
       const parsed = ChallengeParams.safeParse(req.params);
       if (!parsed.success) throw badRequest("invalid challengeId");
-      const c = getChallenge(parsed.data.challengeId);
+      const c = await getChallenge(parsed.data.challengeId);
       if (!c) throw notFound("challenge not found");
       const detail: ChallengeDetail = {
         challengeId: c.challengeId,
@@ -217,8 +213,8 @@ function nowSec(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-function getOverspendInfo(intentHash: Hex, amount: bigint): { overspend: boolean; cap: bigint | null } {
-  const manifest = getManifestByHash(intentHash);
+async function getOverspendInfo(intentHash: Hex, amount: bigint): Promise<{ overspend: boolean; cap: bigint | null }> {
+  const manifest = await getManifestByHash(intentHash);
   if (!manifest) return { overspend: false, cap: null };
   return { overspend: amount > manifest.maxSpendPerTx, cap: manifest.maxSpendPerTx };
 }

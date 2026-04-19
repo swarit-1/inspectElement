@@ -76,7 +76,7 @@ export class IndexerPoller {
 
   /** Reindex from genesis-of-deployment. Caller is responsible for truncating tables. */
   async reindexFromGenesis(): Promise<void> {
-    setMeta(META_LAST_INDEXED_BLOCK, "0");
+    await setMeta(META_LAST_INDEXED_BLOCK, "0");
     await this.catchUp();
   }
 
@@ -122,12 +122,12 @@ export class IndexerPoller {
           "Indexed range",
         );
       }
-      setMeta(META_LAST_INDEXED_BLOCK, upper.toString());
+      await setMeta(META_LAST_INDEXED_BLOCK, upper.toString());
     }
   }
 
   private async resolveStartBlock(): Promise<bigint> {
-    const last = getMeta(META_LAST_INDEXED_BLOCK);
+    const last = await getMeta(META_LAST_INDEXED_BLOCK);
     if (last) {
       const lastNum = BigInt(last);
       if (lastNum > 0n) return lastNum + 1n;

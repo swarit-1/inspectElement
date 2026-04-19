@@ -25,7 +25,7 @@ export function createReplayRouter(): Router {
     asyncHandler(async (req, res) => {
       const parsed = Params.safeParse(req.params);
       if (!parsed.success) throw badRequest("invalid contextDigest");
-      const row = getTraceByDigest(parsed.data.contextDigest as `0x${string}`);
+      const row = await getTraceByDigest(parsed.data.contextDigest as `0x${string}`);
       if (!row) throw notFound("trace not found");
       res.json({
         contextDigest: row.contextDigest,

@@ -1,6 +1,7 @@
 import { INFRA_API_BASE, RUNTIME_API_BASE, USE_MOCKS, DEMO_CHALLENGE_BOND } from "./constants";
 import type {
   ManifestResponse,
+  DemoRuntimeConfig,
   FeedItem,
   FeedItemIntent,
   FeedItemReceipt,
@@ -26,6 +27,7 @@ import {
   scheduleMockChallengeResolve,
   seedUpheldChallenge,
 } from "@/mocks/mock-store";
+import { getAuthToken } from "@/hooks/use-siwe-auth";
 import type { Address, Hex } from "viem";
 
 /** Thrown when a receipt/challenge id is syntactically valid but no record exists. */
@@ -54,6 +56,15 @@ async function fetchWithHelpfulErrors(
   kind: "infra" | "runtime",
 ): Promise<Response> {
   try {
+    // Inject auth header if we have a token
+    const token = getAuthToken();
+    if (token && kind === "infra") {
+      const headers = new Headers(init?.headers);
+      if (!headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      init = { ...init, headers };
+    }
     return await fetch(input, init);
   } catch (err) {
     if (err instanceof TypeError) {
@@ -190,15 +201,39 @@ export async function postReviewerResolve(body: {
 
 // ── Runtime API (Dev 2) — demo-control ──
 
-export async function runDemoScenario(scenario: DemoScenario): Promise<string> {
+export async function getDemoRuntimeConfig(): Promise<DemoRuntimeConfig | null> {
+  if (USE_MOCKS) {
+    return null;
+  }
+
+  const res = await fetchWithHelpfulErrors(
+    `${RUNTIME_API_BASE}/demo/config`,
+    undefined,
+    "runtime"
+  );
+  if (!res.ok) throw new Error(`Demo config failed: ${res.status}`);
+  return res.json();
+}
+
+export async function runDemoScenario(
+  scenario: DemoScenario,
+  ownerAddress?: Address
+): Promise<string> {
   if (USE_MOCKS) {
     await delay(300);
     return `mock-${scenario}-${Date.now()}`;
   }
 
-  const res = await fetchWithHelpfulErrors(`${RUNTIME_API_BASE}/demo/run-${scenario}`, {
-    method: "POST",
-  }, "runtime");
+  const payload = ownerAddress ? JSON.stringify({ ownerAddress }) : undefined;
+  const res = await fetchWithHelpfulErrors(
+    `${RUNTIME_API_BASE}/demo/run-${scenario}`,
+    {
+      method: "POST",
+      headers: payload ? { "Content-Type": "application/json" } : undefined,
+      body: payload,
+    },
+    "runtime"
+  );
   if (!res.ok) throw new Error(`Demo run failed: ${res.status}`);
   const body = (await res.json()) as { scenarioId?: string };
   if (!body.scenarioId) throw new Error("Demo run did not return scenarioId");
