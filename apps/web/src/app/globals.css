@@ -242,9 +242,31 @@ body {
   color: var(--text-primary);
 }
 
+/* ── Toast enter animation ── */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-enter {
+  animation: toastIn var(--duration-normal) var(--ease-out-expo) both;
+}
+
+/* ── Vault dial sweep — used by pulse heart on key status chips ── */
+@keyframes sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* ── Utility: responsive container padding (keeps editorial margins) ── */
+@media (max-width: 900px) {
+  .container-pad {
+    padding-inline: 1.25rem !important;
+  }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .led-pulse {
+  .reveal, .led-pulse, .toast-enter {
     animation: none;
   }
   *, *::before, *::after {

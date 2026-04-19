@@ -191,10 +191,8 @@ export interface DemoStatusLast {
 
 // ── App state ──
 
-export type OnboardingStep =
-  | "connect"
-  | "deploying"
-  | "deployed"
-  | "intent"
-  | "delegate"
-  | "ready";
+/**
+ * Onboarding is a single gate: connect a wallet, then continue to the vault.
+ * GuardedExecutor is a shared protocol contract; there's no per-user deploy.
+ */
+export type OnboardingStep = "connect" | "connected";

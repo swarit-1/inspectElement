@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Red_Hat_Text } from "next/font/google";
 import { Providers } from "@/components/providers/providers";
 import "./globals.css";
@@ -17,10 +17,53 @@ const redhat = Red_Hat_Text({
   weight: ["400", "500", "600", "700"],
 });
 
+const TITLE = "IntentGuard — Guard layer for autonomous agents";
+const DESCRIPTION =
+  "On-chain intents + challenge arbitration for AI agents moving USDC on Base. Sign an intent, let an agent execute, challenge any misstep.";
+
 export const metadata: Metadata = {
-  title: "IntentGuard",
-  description:
-    "Guard-and-recourse layer for AI agents that move USDC on Base",
+  title: {
+    default: TITLE,
+    template: "%s · IntentGuard",
+  },
+  description: DESCRIPTION,
+  applicationName: "IntentGuard",
+  authors: [{ name: "IntentGuard" }],
+  keywords: [
+    "Base",
+    "USDC",
+    "AI agents",
+    "intent",
+    "guarded executor",
+    "challenge",
+    "on-chain",
+  ],
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    siteName: "IntentGuard",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#14181f" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0d14" },
+  ],
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

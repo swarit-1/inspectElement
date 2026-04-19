@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getChallenge } from "@/lib/api";
+import { LoadingPulse } from "@/components/ui/loading";
+import { useToast } from "@/components/ui/toast";
+import { getChallenge, NotFoundError } from "@/lib/api";
 import { formatUsdc, truncateAddress } from "@/lib/constants";
 import type { ChallengeDetail } from "@/lib/types";
 
@@ -11,22 +14,61 @@ interface ChallengeStatusProps {
 }
 
 export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
-  const { data: challenge, isLoading } = useQuery<ChallengeDetail>({
+  const { toast } = useToast();
+  const notifiedRef = useRef(false);
+
+  const { data: challenge, isLoading, error } = useQuery<ChallengeDetail>({
     queryKey: ["challenge", challengeId],
     queryFn: () => getChallenge(challengeId),
     refetchInterval: (query) => {
       const s = query.state.data?.status;
-      return s === "PENDING" || s === "FILED" ? 3000 : false;
+      return s === "PENDING" || s === "FILED" ? 2500 : false;
     },
+    retry: (count, err) => !(err instanceof NotFoundError) && count < 2,
   });
 
-  if (isLoading) {
+  useEffect(() => {
+    if (challenge?.status === "UPHELD" && !notifiedRef.current) {
+      notifiedRef.current = true;
+      toast({
+        variant: "success",
+        title: "Challenge upheld",
+        description: challenge.payoutAmount
+          ? `${formatUsdc(challenge.payoutAmount)} USDC paid from operator stake.`
+          : "Operator stake slashed to the owner.",
+        action: challenge.txHash
+          ? {
+              label: "View tx",
+              href: `https://sepolia.basescan.org/tx/${challenge.txHash}`,
+            }
+          : undefined,
+      });
+    }
+    if (challenge?.status === "REJECTED" && !notifiedRef.current) {
+      notifiedRef.current = true;
+      toast({
+        variant: "danger",
+        title: "Challenge rejected",
+        description: "The arbiter declined the dispute. Bond forfeited.",
+      });
+    }
+  }, [challenge, toast]);
+
+  if (error instanceof NotFoundError) {
     return (
-      <div className="py-6 flex items-center gap-3 text-[12px] font-mono text-text-tertiary tnum">
-        <span className="led-pulse h-1.5 w-1.5 rounded-full bg-text-tertiary" />
-        AWAITING ARBITER…
-      </div>
+      <section className="hairline-top pt-5">
+        <div className="eyebrow text-text-tertiary mb-2">○ Indexer pending</div>
+        <p className="text-[12px] text-text-tertiary leading-relaxed max-w-[60ch]">
+          Your challenge tx has been broadcast but the indexer hasn&apos;t
+          surfaced it yet. This panel will update automatically once the id
+          appears in the feed.
+        </p>
+      </section>
     );
+  }
+
+  if (isLoading) {
+    return <LoadingPulse label="AWAITING ARBITER" pad={false} align="left" />;
   }
 
   if (!challenge) return null;
@@ -52,9 +94,16 @@ export function ChallengeStatus({ challengeId }: ChallengeStatusProps) {
             isUpheld ? "success" : challenge.status === "REJECTED" ? "danger" : "info"
           }
         >
-          {isPending ? "Pending" : challenge.status}
+          {isPending ? "Awaiting arbiter" : challenge.status}
         </StatusBadge>
       </header>
+
+      {isPending && (
+        <div className="flex items-center gap-3 py-4 font-mono text-[11px] tnum text-text-tertiary tracking-wider uppercase">
+          <span className="led-pulse h-1.5 w-1.5 rounded-full bg-info" />
+          Polling for resolution… next check in 2.5s
+        </div>
+      )}
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 py-5 text-[12px] tnum">
         <dt className="eyebrow">Bond posted</dt>

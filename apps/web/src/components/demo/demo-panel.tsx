@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useAccount } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Section } from "@/components/ui/section";
+import { useToast } from "@/components/ui/toast";
 import { runDemoScenario, waitForDemoScenario } from "@/lib/api";
+import { appendScenarioToFeed, resetMockStore } from "@/mocks/mock-store";
 import { USE_MOCKS, truncateAddress } from "@/lib/constants";
 import type { DemoScenario, DemoStatus, DemoRunStatus } from "@/lib/types";
 import type { Hex } from "viem";
@@ -22,7 +27,8 @@ const SCENARIOS: {
     seq: "S-01",
     label: "Legit payment",
     expected: "EXECUTED",
-    description: "2.0 USDC → allowlisted merchant, within per-tx and daily caps.",
+    description:
+      "2.0 USDC → allowlisted merchant, within per-tx and daily caps.",
     variant: "primary",
   },
   {
@@ -46,6 +52,9 @@ const SCENARIOS: {
 ];
 
 export function DemoPanel() {
+  const { address } = useAccount();
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const [statuses, setStatuses] = useState<Record<DemoScenario, DemoStatus>>({
     legit: { scenario: "legit", status: "idle" },
     blocked: { scenario: "blocked", status: "idle" },
@@ -60,37 +69,136 @@ export function DemoPanel() {
 
     try {
       if (USE_MOCKS) {
-        await new Promise((r) => setTimeout(r, 1600));
-        setStatuses((prev) => ({ ...prev, [scenario]: getMockResult(scenario) }));
+        await new Promise((r) => setTimeout(r, 1400));
+        const { receiptId } = appendScenarioToFeed(scenario, address);
+        const result: DemoStatus =
+          scenario === "blocked"
+            ? {
+                scenario,
+                status: "success",
+                reasonCode: "COUNTERPARTY_NOT_ALLOWED",
+              }
+            : {
+                scenario,
+                status: "success",
+                receiptId,
+                txHash: ("0xaaaa" + String(Date.now()).padStart(60, "0")) as Hex,
+              };
+        setStatuses((prev) => ({ ...prev, [scenario]: result }));
+        qc.invalidateQueries({ queryKey: ["feed"] });
+        toast({
+          variant:
+            scenario === "blocked"
+              ? "danger"
+              : scenario === "overspend"
+                ? "warning"
+                : "success",
+          title:
+            scenario === "legit"
+              ? "Payment executed"
+              : scenario === "blocked"
+                ? "Attempt blocked at guard"
+                : "Overspend recorded · recourse available",
+          description:
+            scenario === "overspend" && receiptId
+              ? "Open the receipt to file an AmountViolation challenge."
+              : scenario === "legit"
+                ? "2.0 USDC → merchant · receipt added to the ledger."
+                : "20.0 USDC → non-allowlisted target · USDC never moved.",
+          action:
+            scenario === "overspend" && receiptId
+              ? { label: "Open receipt", onClick: () => window.location.assign(`/receipt/${receiptId}`) }
+              : undefined,
+        });
         return;
       }
       const id = await runDemoScenario(scenario);
       const result = await waitForDemoScenario(scenario, id);
       setStatuses((prev) => ({ ...prev, [scenario]: result }));
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      if (result.status === "success") {
+        toast({
+          variant:
+            scenario === "blocked"
+              ? "danger"
+              : scenario === "overspend"
+                ? "warning"
+                : "success",
+          title:
+            scenario === "legit"
+              ? "Payment executed"
+              : scenario === "blocked"
+                ? "Attempt blocked at guard"
+                : "Overspend recorded · recourse available",
+          description: result.txHash
+            ? `tx · ${truncateAddress(result.txHash, 6)}`
+            : undefined,
+        });
+      } else if (result.status === "failed") {
+        toast({
+          variant: "danger",
+          title: "Scenario failed",
+          description: result.error ?? "Unknown error",
+        });
+      }
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       setStatuses((prev) => ({
         ...prev,
-        [scenario]: {
-          scenario,
-          status: "failed",
-          error: err instanceof Error ? err.message : "Unknown error",
-        },
+        [scenario]: { scenario, status: "failed", error: message },
       }));
+      toast({
+        variant: "danger",
+        title: "Scenario failed",
+        description: message,
+      });
     }
+  }
+
+  function handleReset() {
+    if (!USE_MOCKS) return;
+    resetMockStore();
+    setStatuses({
+      legit: { scenario: "legit", status: "idle" },
+      blocked: { scenario: "blocked", status: "idle" },
+      overspend: { scenario: "overspend", status: "idle" },
+    });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+    toast({
+      variant: "info",
+      title: "Demo state reset",
+      description: "Ledger cleared back to fixtures.",
+    });
   }
 
   return (
     <Section
-      index="04"
       kicker="Test bench"
       title="Scenario console"
-      subtitle="Trigger scripted agents to verify guard and recourse mechanics"
+      subtitle={
+        USE_MOCKS
+          ? "Trigger scripted runs — each scenario appends a new ledger entry in mock mode."
+          : "Runs on the live demo-control service. Results post to the indexer and appear in the feed."
+      }
       action={
-        <div className="font-mono text-[11px] tnum text-text-tertiary">
-          runtime ·{" "}
-          <span className="text-text-secondary">
-            {process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402"}
-          </span>
+        <div className="flex items-center gap-5">
+          {USE_MOCKS && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="font-mono text-[11px] tnum tracking-wider uppercase text-text-tertiary hover:text-accent underline-offset-4 hover:underline"
+            >
+              ↻ Reset demo
+            </button>
+          )}
+          <div className="font-mono text-[11px] tnum text-text-tertiary">
+            runtime ·{" "}
+            <span className="text-text-secondary">
+              {USE_MOCKS
+                ? "mock (in-browser)"
+                : (process.env.NEXT_PUBLIC_RUNTIME_API_URL ?? "http://localhost:7402")}
+            </span>
+          </div>
         </div>
       }
     >
@@ -107,6 +215,15 @@ export function DemoPanel() {
             onRun={() => void handleRun(id)}
           />
         ))}
+      </div>
+
+      <div className="hairline-top mt-4 pt-6 flex flex-col gap-2 text-[12px] text-text-tertiary leading-relaxed max-w-[62ch]">
+        <div className="eyebrow text-text-secondary">Demo-safe fallback</div>
+        <p>
+          In mock mode, scenarios mutate an in-browser ledger so the story plays
+          end-to-end without running the agent service. Live mode calls
+          demo-control and waits for real receipts from the indexer.
+        </p>
       </div>
     </Section>
   );
@@ -137,7 +254,7 @@ function ScenarioRow({
       </div>
 
       <div className="flex flex-col gap-2 min-w-0">
-        <div className="flex items-baseline gap-3">
+        <div className="flex items-baseline gap-3 flex-wrap">
           <h3
             className="font-display font-semibold tracking-tight text-text-primary"
             style={{ fontSize: "var(--t-md)" }}
@@ -152,8 +269,15 @@ function ScenarioRow({
           {description}
         </p>
 
+        {isRunning && (
+          <div className="mt-3 flex items-center gap-3 font-mono text-[11px] tnum text-text-tertiary">
+            <span className="led-pulse h-1.5 w-1.5 rounded-full bg-accent" />
+            EXECUTING AGENT RUN…
+          </div>
+        )}
+
         {status.status === "success" && (
-          <div className="mt-3 flex items-center gap-3">
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
             {status.reasonCode ? (
               <>
                 <StatusBadge variant="danger">Blocked</StatusBadge>
@@ -161,17 +285,25 @@ function ScenarioRow({
                   reason · {status.reasonCode.replace(/_/g, " ").toLowerCase()}
                 </span>
               </>
-            ) : status.txHash ? (
+            ) : status.receiptId ? (
               <>
                 <StatusBadge variant="success">Executed</StatusBadge>
-                <a
-                  href={`https://sepolia.basescan.org/tx/${status.txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/receipt/${status.receiptId}`}
                   className="font-mono text-[11px] tnum text-accent hover:text-accent-bright underline-offset-4 hover:underline"
                 >
-                  tx · {truncateAddress(status.txHash, 6)} ↗
-                </a>
+                  receipt · {truncateAddress(status.receiptId, 6)} →
+                </Link>
+                {status.txHash && !USE_MOCKS && (
+                  <a
+                    href={`https://sepolia.basescan.org/tx/${status.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-[11px] tnum text-text-tertiary hover:text-text-primary underline-offset-4 hover:underline"
+                  >
+                    tx ↗
+                  </a>
+                )}
               </>
             ) : (
               <StatusBadge variant="info">Completed</StatusBadge>
@@ -197,33 +329,4 @@ function ScenarioRow({
       </Button>
     </div>
   );
-}
-
-function getMockResult(scenario: DemoScenario): DemoStatus {
-  switch (scenario) {
-    case "legit":
-      return {
-        scenario: "legit",
-        status: "success",
-        txHash:
-          "0xaaaa000000000000000000000000000000000000000000000000000000000001" as Hex,
-        receiptId:
-          "0x0000000000000000000000000000000000000000000000000000000000000001" as Hex,
-      };
-    case "blocked":
-      return {
-        scenario: "blocked",
-        status: "success",
-        reasonCode: "COUNTERPARTY_NOT_ALLOWED",
-      };
-    case "overspend":
-      return {
-        scenario: "overspend",
-        status: "success",
-        txHash:
-          "0xaaaa000000000000000000000000000000000000000000000000000000000002" as Hex,
-        receiptId:
-          "0x0000000000000000000000000000000000000000000000000000000000000002" as Hex,
-      };
-  }
 }

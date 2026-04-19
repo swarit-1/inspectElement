@@ -1,35 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import { WalletConnect } from "@/components/onboarding/wallet-connect";
 import { CHAIN_ID } from "@/lib/constants";
-import type { OnboardingStep } from "@/lib/types";
 
 export default function HomePage() {
   const { isConnected } = useAccount();
   const router = useRouter();
-  const [step, setStep] = useState<OnboardingStep>("connect");
+
+  const goToDashboard = useCallback(() => {
+    router.push("/dashboard");
+  }, [router]);
 
   useEffect(() => {
-    if (isConnected) {
-      router.push("/dashboard");
-    }
+    if (isConnected) router.prefetch("/dashboard");
   }, [isConnected, router]);
-
-  function handleStepChange(newStep: OnboardingStep) {
-    setStep(newStep);
-    if (newStep === "deployed") {
-      setTimeout(() => router.push("/dashboard"), 500);
-    }
-  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
       {/* Left: editorial onboarding */}
-      <div className="px-10 lg:px-16 py-14 flex flex-col justify-center max-w-[640px] reveal">
-        <WalletConnect step={step} onStepChange={handleStepChange} />
+      <div className="px-6 md:px-10 lg:px-16 py-14 flex flex-col justify-center max-w-[640px] reveal">
+        <WalletConnect onConnected={goToDashboard} />
       </div>
 
       {/* Right: vault diagram column — separation through tone, not card */}

@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAccount } from "wagmi";
-import type { ReactNode } from "react";
-import { CHAIN_ID, CONTRACT_ADDRESSES, truncateAddress } from "@/lib/constants";
+import { useAccount, useDisconnect, useChainId, useSwitchChain } from "wagmi";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  CHAIN_ID,
+  CONTRACT_ADDRESSES,
+  USE_MOCKS,
+  truncateAddress,
+} from "@/lib/constants";
+import { useToast } from "@/components/ui/toast";
 
 interface ShellProps {
   children: ReactNode;
@@ -19,14 +25,90 @@ const NAV_ITEMS = [
 export function Shell({ children }: ShellProps) {
   const pathname = usePathname();
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const connectedChainId = useChainId();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { toast } = useToast();
+
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  const wrongNetwork = isConnected && connectedChainId !== CHAIN_ID;
+
+  useEffect(() => {
+    if (wrongNetwork) {
+      toast({
+        id: "wrong-network",
+        variant: "warning",
+        title: "Wrong network",
+        description: `Switch to Base Sepolia (${CHAIN_ID}) to submit transactions.`,
+        duration: 0,
+        action: {
+          label: "Switch network",
+          onClick: () => switchChain({ chainId: CHAIN_ID }),
+        },
+      });
+    }
+  }, [wrongNetwork, toast, switchChain]);
 
   return (
     <div className="flex min-h-screen">
+      {/* Mobile top bar */}
+      <header className="lg:hidden fixed top-0 inset-x-0 z-30 h-14 px-5 flex items-center justify-between bg-bg-surface border-b border-rule">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setMobileNavOpen((v) => !v)}
+          className="flex items-center gap-3 text-text-primary"
+        >
+          <span className="flex flex-col gap-[3px]">
+            <span className="h-px w-4 bg-text-secondary" />
+            <span className="h-px w-4 bg-text-secondary" />
+            <span className="h-px w-4 bg-text-secondary" />
+          </span>
+          <span className="flex items-baseline gap-1.5">
+            <VaultMark />
+            <span
+              className="font-display font-semibold tracking-tight leading-none"
+              style={{ fontSize: "var(--t-sm)" }}
+            >
+              INTENT
+            </span>
+            <span
+              className="font-display font-semibold text-accent tracking-tight leading-none"
+              style={{ fontSize: "var(--t-sm)" }}
+            >
+              GUARD
+            </span>
+          </span>
+        </button>
+        <NetworkStatusChip
+          isConnected={isConnected}
+          wrongNetwork={wrongNetwork}
+          address={address}
+          compact
+        />
+      </header>
+
       {/* Sidebar — vault control identity */}
-      <aside className="w-[240px] shrink-0 bg-bg-surface flex flex-col border-r border-rule">
+      <aside
+        className={`
+          fixed lg:static inset-y-0 left-0 z-40 w-[240px] shrink-0
+          bg-bg-surface flex flex-col border-r border-rule
+          transform transition-transform duration-[--duration-normal] ease-[--ease-out-expo]
+          ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+        `}
+      >
         {/* Brand stamp */}
         <div className="px-6 pt-7 pb-5">
-          <Link href="/dashboard" className="block group">
+          <Link
+            href="/dashboard"
+            className="block group"
+            onClick={() => setMobileNavOpen(false)}
+          >
             <div className="flex items-baseline gap-1.5">
               <VaultMark />
               <span
@@ -43,9 +125,21 @@ export function Shell({ children }: ShellProps) {
               </span>
             </div>
             <span className="eyebrow mt-2 block text-text-quat">
-              Agent guard · v0.1
+              Agent guard · v0.1{USE_MOCKS && <span className="text-accent"> · MOCK</span>}
             </span>
           </Link>
+        </div>
+
+        {/* Connection pill */}
+        <div className="px-6 pb-4">
+          <NetworkStatusChip
+            isConnected={isConnected}
+            wrongNetwork={wrongNetwork}
+            address={address}
+            isSwitching={isSwitching}
+            onSwitch={() => switchChain({ chainId: CHAIN_ID })}
+            onDisconnect={() => disconnect()}
+          />
         </div>
 
         {/* Nav */}
@@ -70,17 +164,16 @@ export function Shell({ children }: ShellProps) {
               >
                 <span
                   className={`seq tabular-nums ${
-                    active ? "text-accent" : "text-text-quat group-hover:text-text-tertiary"
+                    active
+                      ? "text-accent"
+                      : "text-text-quat group-hover:text-text-tertiary"
                   }`}
                 >
                   {seq}
                 </span>
                 <span className={active ? "font-medium" : ""}>{label}</span>
                 {active && (
-                  <span
-                    aria-hidden
-                    className="ml-auto h-3 w-px bg-accent"
-                  />
+                  <span aria-hidden className="ml-auto h-3 w-px bg-accent" />
                 )}
               </Link>
             );
@@ -126,10 +219,104 @@ export function Shell({ children }: ShellProps) {
         </div>
       </aside>
 
+      {/* Mobile backdrop */}
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+          className="lg:hidden fixed inset-0 z-30 bg-bg-root/70 backdrop-blur-[2px]"
+        />
+      )}
+
       {/* Main content */}
-      <main className="flex-1 min-w-0 bg-bg-root">
-        <div className="max-w-[980px] px-10 py-10 reveal">{children}</div>
+      <main className="flex-1 min-w-0 bg-bg-root pt-14 lg:pt-0">
+        <div className="max-w-[980px] px-5 md:px-8 lg:px-10 py-8 lg:py-10 reveal">
+          {children}
+        </div>
       </main>
+    </div>
+  );
+}
+
+function NetworkStatusChip({
+  isConnected,
+  wrongNetwork,
+  address,
+  isSwitching,
+  onSwitch,
+  onDisconnect,
+  compact,
+}: {
+  isConnected: boolean;
+  wrongNetwork: boolean;
+  address?: string;
+  isSwitching?: boolean;
+  onSwitch?: () => void;
+  onDisconnect?: () => void;
+  compact?: boolean;
+}) {
+  if (!isConnected) {
+    return (
+      <div
+        className={`flex items-center gap-2 ${compact ? "" : "py-2 px-3 bg-bg-inset border border-rule"}`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-text-quat" />
+        <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-text-tertiary">
+          Disconnected
+        </span>
+      </div>
+    );
+  }
+  if (wrongNetwork) {
+    return (
+      <div
+        className={`flex items-center gap-2 ${
+          compact ? "" : "py-2 px-3 bg-warning-dim/40 border border-warning/30"
+        }`}
+      >
+        <span className="led-pulse h-1.5 w-1.5 rounded-full bg-warning" />
+        <span className="font-mono text-[10.5px] tnum tracking-wider uppercase text-warning">
+          Wrong network
+        </span>
+        {!compact && onSwitch && (
+          <button
+            type="button"
+            onClick={onSwitch}
+            className="ml-auto text-[10.5px] tnum tracking-wider uppercase text-warning hover:text-warning/80 underline-offset-4 hover:underline"
+          >
+            {isSwitching ? "Switching…" : "Switch →"}
+          </button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`flex items-center gap-2 ${
+        compact ? "" : "py-2 px-3 bg-bg-inset border border-rule-subtle"
+      }`}
+    >
+      <span className="led-pulse h-1.5 w-1.5 rounded-full bg-success" />
+      <span
+        className={`font-mono ${compact ? "text-[10.5px]" : "text-[11px]"} tnum tracking-wider uppercase text-text-secondary`}
+      >
+        {compact ? "Live" : "Connected"}
+      </span>
+      {!compact && address && (
+        <span className="font-mono text-[11px] tnum text-text-tertiary ml-auto">
+          {truncateAddress(address, 4)}
+        </span>
+      )}
+      {!compact && onDisconnect && (
+        <button
+          type="button"
+          onClick={onDisconnect}
+          className="text-[10.5px] tnum tracking-wider uppercase text-text-quat hover:text-text-secondary underline-offset-4 hover:underline"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

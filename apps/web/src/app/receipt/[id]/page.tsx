@@ -6,24 +6,33 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Shell } from "@/components/ui/shell";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingPulse } from "@/components/ui/loading";
 import { ChallengeCTA } from "@/components/challenge/challenge-cta";
 import { ChallengeStatus } from "@/components/challenge/challenge-status";
-import { getReceipt } from "@/lib/api";
+import { getReceipt, NotFoundError } from "@/lib/api";
 import {
   formatUsdc,
   truncateAddress,
   DEMO_MAX_SPEND_PER_TX,
+  USE_MOCKS,
 } from "@/lib/constants";
 import type { ReceiptDetail } from "@/lib/types";
 
 export default function ReceiptPage() {
   const params = useParams();
-  const receiptId = params.id as string;
+  const receiptId = typeof params.id === "string" ? params.id : "";
   const [challengeId, setChallengeId] = useState<string | null>(null);
 
-  const { data: receipt, isLoading } = useQuery<ReceiptDetail>({
+  const {
+    data: receipt,
+    isLoading,
+    error,
+  } = useQuery<ReceiptDetail>({
     queryKey: ["receipt", receiptId],
     queryFn: () => getReceipt(receiptId),
+    retry: (count, err) => !(err instanceof NotFoundError) && count < 2,
+    enabled: !!receiptId,
   });
 
   return (
@@ -39,20 +48,58 @@ export default function ReceiptPage() {
           </Link>
         </div>
 
-        {isLoading && (
-          <div className="py-12 flex items-center gap-3 text-[12px] font-mono text-text-tertiary tnum">
-            <span className="led-pulse h-1.5 w-1.5 rounded-full bg-text-tertiary" />
-            FETCHING RECEIPT…
-          </div>
+        {isLoading && <LoadingPulse label="FETCHING RECEIPT" />}
+
+        {error instanceof NotFoundError && (
+          <EmptyState
+            glyph="✕"
+            tone="warning"
+            caption="RECEIPT NOT FOUND"
+            headline="No receipt under that id."
+            body={
+              <>
+                The indexer has no record of{" "}
+                <code className="font-mono text-text-secondary break-all">
+                  {receiptId || "(empty)"}
+                </code>
+                . It may have been pruned, or the id may be malformed. If you
+                just ran a scenario, give the indexer a moment to catch up.
+              </>
+            }
+            primary={{ label: "Open activity feed", href: "/dashboard" }}
+            secondary={{ label: "Run a scenario", href: "/demo" }}
+          />
+        )}
+
+        {error && !(error instanceof NotFoundError) && (
+          <EmptyState
+            glyph="✕"
+            tone="danger"
+            caption="RECEIPT UNREACHABLE"
+            body={
+              <>
+                {USE_MOCKS
+                  ? "Mock store rejected the lookup."
+                  : "Could not reach the indexer."}
+                {" "}
+                <span className="text-danger font-mono text-[12px]">
+                  {(error as Error).message}
+                </span>
+              </>
+            }
+            primary={{ label: "Back to dashboard", href: "/dashboard" }}
+          />
         )}
 
         {receipt && (
           <>
             {/* ── Hero: amount-first ── */}
             <header className="flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <span className="seq tabular-nums">RECEIPT · {truncateAddress(receipt.receiptId, 4)}</span>
-                <span className="h-px flex-1 bg-rule" />
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="seq tabular-nums">
+                  RECEIPT · {truncateAddress(receipt.receiptId, 4)}
+                </span>
+                <span className="h-px flex-1 min-w-4 bg-rule" />
                 <StatusBadge
                   variant={receipt.status === "overspend" ? "warning" : "success"}
                 >
@@ -108,8 +155,15 @@ export default function ReceiptPage() {
             {/* ── Receipt details — definition list, no card ── */}
             <section className="grid grid-cols-[180px_1fr] gap-y-3 gap-x-8 hairline-top hairline-bottom py-6">
               <Field label="Agent ID" value={truncateAddress(receipt.agentId, 8)} />
-              <Field label="Intent hash" value={truncateAddress(receipt.intentHash, 8)} accent />
-              <Field label="Context digest" value={truncateAddress(receipt.contextDigest, 8)} />
+              <Field
+                label="Intent hash"
+                value={truncateAddress(receipt.intentHash, 8)}
+                accent
+              />
+              <Field
+                label="Context digest"
+                value={truncateAddress(receipt.contextDigest, 8)}
+              />
               <Field label="Nonce" value={receipt.nonce} />
               <Field label="Trace URI" value={receipt.traceURI || "—"} truncate />
               <Field

@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Section } from "@/components/ui/section";
+import { LoadingPulse } from "@/components/ui/loading";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FeedItem } from "./feed-item";
 import { useFeed } from "@/hooks/use-feed";
 
@@ -18,18 +19,17 @@ export function ActivityFeed() {
 
   return (
     <Section
-      index="03"
       kicker="Ledger"
       title="Activity feed"
       subtitle="Every executor receipt, blocked attempt, and challenge — chronological"
       action={
-        sorted.length > 0 && (
+        sorted.length > 0 ? (
           <div className="flex gap-4 tnum text-[11px] font-mono text-text-tertiary">
-            <span>● {counts.receipt ?? 0} confirmed</span>
-            <span>✕ {counts.blocked ?? 0} blocked</span>
-            <span>◆ {counts.challenge ?? 0} disputed</span>
+            <span className="text-success">● {counts.receipt ?? 0} confirmed</span>
+            <span className="text-danger">✕ {counts.blocked ?? 0} blocked</span>
+            <span className="text-info">◆ {counts.challenge ?? 0} disputed</span>
           </div>
-        )
+        ) : null
       }
     >
       <div className="flex flex-col">
@@ -44,55 +44,38 @@ export function ActivityFeed() {
           </div>
         )}
 
-        {isLoading && (
-          <div className="py-12 grid place-items-center">
-            <div className="flex items-center gap-3 text-[12px] font-mono text-text-tertiary tnum">
-              <span className="led-pulse h-1.5 w-1.5 rounded-full bg-text-tertiary" />
-              SYNCING LEDGER…
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingPulse label="SYNCING LEDGER" />}
 
         {error && (
-          <div className="py-6 text-[13px] text-danger font-mono tnum">
-            ✕ Feed offline — {error.message}
-          </div>
+          <EmptyState
+            glyph="✕"
+            tone="danger"
+            caption="FEED OFFLINE"
+            body={
+              <>
+                Could not fetch the ledger:{" "}
+                <span className="text-danger font-mono text-[12px]">
+                  {error.message}
+                </span>
+              </>
+            }
+          />
         )}
 
-        {items && items.length === 0 && <EmptyFeed />}
+        {!isLoading && !error && items && items.length === 0 && (
+          <EmptyState
+            glyph="○"
+            caption="NO EVENTS YET"
+            headline="The ledger is clean."
+            body="Once an agent attempts a payment, you'll see receipts (allowed spends), blocked attempts (guard rejected), and challenges (disputes) appear here in order."
+            primary={{ label: "Run a scripted scenario", href: "/demo" }}
+          />
+        )}
 
         {sorted.map((item, i) => (
           <FeedItem key={item.id} item={item} index={i + 1} />
         ))}
       </div>
     </Section>
-  );
-}
-
-function EmptyFeed() {
-  return (
-    <div className="grid grid-cols-[200px_1fr] gap-10 py-10">
-      <div>
-        <div className="font-mono text-[11px] tnum text-text-quat tracking-wider mb-3">
-          NO EVENTS YET
-        </div>
-        <div className="font-display text-text-secondary leading-tight" style={{ fontSize: "var(--t-lg)" }}>
-          The ledger is clean.
-        </div>
-      </div>
-      <div className="text-[13px] text-text-tertiary leading-relaxed max-w-[52ch]">
-        Once an agent attempts a payment, you&apos;ll see receipts (allowed
-        spends), blocked attempts (guard rejected before reaching USDC), and
-        challenges (disputes you filed) appear here in order.
-        <div className="mt-4">
-          <Link
-            href="/demo"
-            className="text-accent hover:text-accent-bright underline-offset-4 hover:underline"
-          >
-            Run a scripted scenario →
-          </Link>
-        </div>
-      </div>
-    </div>
   );
 }

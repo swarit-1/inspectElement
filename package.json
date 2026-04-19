@@ -28,7 +28,6 @@
     "agent:legit": "tsx agents/legit.ts",
     "agent:blocked": "tsx agents/blocked.ts",
     "agent:overspend": "tsx agents/overspend.ts",
-
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "test:contracts": "cd test && hardhat test --config ../hardhat.config.cts",
@@ -45,15 +44,15 @@
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-ignition-ethers": "0.15.5",
-    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "@nomicfoundation/hardhat-ignition-ethers": "^3.1.2",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "dotenv": "16.4.5",
-    "hardhat": "2.28.0",
+    "hardhat": "^3.4.0",
     "ts-node": "10.9.2",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.4"
   }
 }

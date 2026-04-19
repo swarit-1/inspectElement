@@ -17,14 +17,24 @@ import type {
   ChallengeStatus,
   ChallengeType,
 } from "./types";
+import { MOCK_DEMO_IDLE } from "@/mocks/fixtures";
 import {
-  MOCK_FEED,
-  MOCK_FEED_WITH_CHALLENGE,
-  MOCK_RECEIPT_DETAIL,
-  MOCK_CHALLENGE_DETAIL,
-  MOCK_DEMO_IDLE,
-} from "@/mocks/fixtures";
+  getMockFeed,
+  getMockReceipt,
+  getMockChallenge,
+  appendMockChallengeFiled,
+  scheduleMockChallengeResolve,
+  seedUpheldChallenge,
+} from "@/mocks/mock-store";
 import type { Address, Hex } from "viem";
+
+/** Thrown when a receipt/challenge id is syntactically valid but no record exists. */
+export class NotFoundError extends Error {
+  constructor(what: string, id: string) {
+    super(`${what} ${id} not found`);
+    this.name = "NotFoundError";
+  }
+}
 
 function describeServiceOffline(kind: "infra" | "runtime"): Error {
   if (kind === "infra") {
@@ -85,9 +95,8 @@ export async function postManifest(manifest: {
 
 export async function getFeed(owner: Address): Promise<FeedItem[]> {
   if (USE_MOCKS) {
-    await delay(300);
-    if (mockChallengeVisible) return MOCK_FEED_WITH_CHALLENGE;
-    return MOCK_FEED;
+    await delay(180);
+    return getMockFeed();
   }
 
   const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/feed?owner=${owner}`, undefined, "infra");
@@ -98,11 +107,14 @@ export async function getFeed(owner: Address): Promise<FeedItem[]> {
 
 export async function getReceipt(receiptId: string): Promise<ReceiptDetail> {
   if (USE_MOCKS) {
-    await delay(200);
-    return MOCK_RECEIPT_DETAIL;
+    await delay(180);
+    const hit = getMockReceipt(receiptId);
+    if (!hit) throw new NotFoundError("Receipt", receiptId);
+    return hit;
   }
 
   const res = await fetchWithHelpfulErrors(`${INFRA_API_BASE}/v1/receipts/${receiptId}`, undefined, "infra");
+  if (res.status === 404) throw new NotFoundError("Receipt", receiptId);
   if (!res.ok) throw new Error(`Receipt fetch failed: ${res.status}`);
   const raw = await res.json();
   return normalizeReceiptDetail(raw);
@@ -110,8 +122,16 @@ export async function getReceipt(receiptId: string): Promise<ReceiptDetail> {
 
 export async function getChallenge(challengeId: string): Promise<ChallengeDetail> {
   if (USE_MOCKS) {
-    await delay(200);
-    return MOCK_CHALLENGE_DETAIL;
+    await delay(180);
+    const hit = getMockChallenge(challengeId);
+    if (hit) return hit;
+    // Fallback to the canonical upheld fixture if caller passed the seeded id.
+    const seeded = seedUpheldChallenge();
+    const seededHit = getMockChallenge(seeded);
+    if (seededHit && (challengeId === seeded || challengeId === "pending")) {
+      return seededHit;
+    }
+    throw new NotFoundError("Challenge", challengeId);
   }
 
   const res = await fetchWithHelpfulErrors(
@@ -431,12 +451,7 @@ function normalizeChallengeDetail(raw: unknown): ChallengeDetail {
 
 // ── Mock state (client-side only, for demo) ──
 
-let mockChallengeVisible = false;
 let mockDemoOverride: Partial<DemoStatus> = {};
-
-export function setMockChallengeVisible(v: boolean): void {
-  mockChallengeVisible = v;
-}
 
 export function setMockDemoOverride(o: Partial<DemoStatus>): void {
   mockDemoOverride = o;
@@ -446,14 +461,21 @@ function delay(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** After filing on-chain, wait for indexer to attach a challenge row to the feed. */
+/**
+ * After filing on-chain, wait for the indexer to attach a challenge row to
+ * the feed and return its id. In mock mode this appends an in-memory row
+ * immediately and schedules a delayed UPHELD resolution so the UI has
+ * something to poll.
+ */
 export async function pollChallengeIdForReceipt(
   owner: Address,
   receiptId: Hex,
   maxAttempts = 40
 ): Promise<string | null> {
   if (USE_MOCKS) {
-    return "1";
+    const id = appendMockChallengeFiled(receiptId);
+    scheduleMockChallengeResolve(id, 6500);
+    return id;
   }
   for (let i = 0; i < maxAttempts; i++) {
     await delay(2000);

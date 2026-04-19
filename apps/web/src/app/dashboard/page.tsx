@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/ui/shell";
 import { BudgetGauge } from "@/components/ui/budget-gauge";
+import { WalletGate } from "@/components/ui/wallet-gate";
 import { IntentBuilder } from "@/components/intent/intent-builder";
 import { AgentDelegate } from "@/components/delegation/agent-delegate";
 import { ActivityFeed } from "@/components/feed/activity-feed";
@@ -40,50 +41,55 @@ export default function DashboardPage() {
 
   return (
     <Shell>
-      <div className="flex flex-col gap-14">
-        {/* ── Headline: vault status ── */}
-        <header className="flex flex-col gap-7">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <span className="eyebrow block mb-2">Vault status</span>
-              <h1
-                className="font-display font-semibold tracking-tight text-text-primary leading-[1.05]"
-                style={{ fontSize: "var(--t-2xl)" }}
-              >
-                Today&apos;s perimeter.
-              </h1>
-            </div>
-            <div className="text-right">
-              <div className="eyebrow mb-1">Window</div>
-              <div className="font-mono text-[13px] tnum text-text-secondary">
-                {new Date().toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}{" "}
-                · 24h rolling
+      <WalletGate
+        caption="DASHBOARD LOCKED"
+        body="Connect a wallet to read your vault's perimeter, commit an intent, and watch the ledger in real time."
+      >
+        <div className="flex flex-col gap-14">
+          {/* ── Headline: vault status ── */}
+          <header className="flex flex-col gap-7">
+            <div className="flex items-baseline justify-between gap-4 flex-wrap">
+              <div>
+                <span className="eyebrow block mb-2">Vault status</span>
+                <h1
+                  className="font-display font-semibold tracking-tight text-text-primary leading-[1.05]"
+                  style={{ fontSize: "var(--t-2xl)" }}
+                >
+                  Today&apos;s perimeter.
+                </h1>
+              </div>
+              <div className="text-right">
+                <div className="eyebrow mb-1">Window</div>
+                <div className="font-mono text-[13px] tnum text-text-secondary">
+                  {new Date().toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}{" "}
+                  · 24h rolling
+                </div>
               </div>
             </div>
-          </div>
 
-          <BudgetGauge
-            spentToday={spentToday}
-            maxPerDay={DEMO_MAX_SPEND_PER_DAY}
-            maxPerTx={DEMO_MAX_SPEND_PER_TX}
-            lastTx={lastTx}
-          />
-        </header>
+            <BudgetGauge
+              spentToday={spentToday}
+              maxPerDay={DEMO_MAX_SPEND_PER_DAY}
+              maxPerTx={DEMO_MAX_SPEND_PER_TX}
+              lastTx={lastTx}
+            />
+          </header>
 
-        {/* ── Setup steps ── */}
-        <IntentBuilder onCommitted={(_hash: Hex) => setIntentCommitted(true)} />
+          {/* ── Setup steps ── */}
+          <IntentBuilder onCommitted={(_hash: Hex) => setIntentCommitted(true)} />
 
-        {intentCommitted && (
-          <AgentDelegate onDelegated={() => setDelegated(true)} />
-        )}
+          {intentCommitted && (
+            <AgentDelegate onDelegated={() => setDelegated(true)} />
+          )}
 
-        {/* ── Ledger ── */}
-        <ActivityFeed />
-      </div>
+          {/* ── Ledger ── */}
+          <ActivityFeed />
+        </div>
+      </WalletGate>
     </Shell>
   );
 }
