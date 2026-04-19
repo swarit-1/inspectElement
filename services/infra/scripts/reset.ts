@@ -9,9 +9,12 @@ import { logger } from "../src/utils/logger.js";
  *
  *   npm run reset
  */
-function main(): void {
-  resetDb();
+async function main(): Promise<void> {
+  await resetDb();
   logger.info("DB reset complete; run `npm run reindex` to re-pull on-chain state");
 }
 
-main();
+main().catch((e) => {
+  logger.fatal({ err: e instanceof Error ? e.message : String(e) }, "Reset failed");
+  process.exit(1);
+});

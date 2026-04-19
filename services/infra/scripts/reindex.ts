@@ -1,4 +1,5 @@
-import { resetDb } from "../src/store/db.js";
+import { getProvider } from "../src/store/db.js";
+import { setMeta, META_LAST_INDEXED_BLOCK } from "../src/store/meta.js";
 import { IndexerPoller } from "../src/indexer/poller.js";
 import { logger } from "../src/utils/logger.js";
 
@@ -11,17 +12,27 @@ import { logger } from "../src/utils/logger.js";
  */
 async function main(): Promise<void> {
   logger.warn("Reindex starting: indexed tables will be truncated");
-  // Selective truncate: keep manifests/traces/blocked, drop indexed views.
-  const { getDb } = await import("../src/store/db.js");
-  const db = getDb();
-  db.transaction(() => {
-    db.exec("DELETE FROM receipts;");
-    db.exec("DELETE FROM challenges;");
-    db.exec("DELETE FROM intents;");
-    db.exec("DELETE FROM agents;");
-    db.exec("DELETE FROM delegates;");
-    db.exec("DELETE FROM meta WHERE key = 'indexer.last_block';");
-  })();
+
+  const provider = getProvider();
+  if (provider === "sqlite") {
+    const { getDb } = await import("../src/store/db.js");
+    const db = getDb();
+    db.transaction(() => {
+      db.exec("DELETE FROM receipts;");
+      db.exec("DELETE FROM challenges;");
+      db.exec("DELETE FROM intents;");
+      db.exec("DELETE FROM agents;");
+      db.exec("DELETE FROM delegates;");
+      db.exec("DELETE FROM meta WHERE key = 'indexer.last_block';");
+    })();
+  } else {
+    const { db } = await import("../src/store/db.js");
+    const supabase = db();
+    for (const table of ["receipts", "challenges", "intents", "agents", "delegates"]) {
+      await supabase.from(table).delete().neq("1", "0");
+    }
+    await setMeta(META_LAST_INDEXED_BLOCK, "0");
+  }
 
   const poller = await IndexerPoller.fromEnv();
   await poller.reindexFromGenesis();
@@ -31,7 +42,5 @@ async function main(): Promise<void> {
 
 main().catch((e) => {
   logger.fatal({ err: e instanceof Error ? e.message : String(e) }, "Reindex failed");
-  // Fall through to keep `resetDb` available in case the user wants a full nuke.
-  void resetDb;
   process.exit(1);
 });

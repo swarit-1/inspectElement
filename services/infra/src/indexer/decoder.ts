@@ -83,7 +83,7 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
 
   switch (decoded.eventName) {
     case "ActionReceipt": {
-      upsertReceipt({
+      await upsertReceipt({
         receiptId: args.receiptId as Hex,
         owner: args.owner as Address,
         agentId: args.agentId as Hex,
@@ -106,15 +106,13 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "ReceiptStored":
-      // ReceiptStored is a companion lookup index — already covered by ActionReceipt,
-      // but if we ever miss the AR event we record presence here as a best-effort.
       return true;
     case "TraceURIStored": {
-      setReceiptTraceUri(args.receiptId as Hex, args.traceURI as string);
+      await setReceiptTraceUri(args.receiptId as Hex, args.traceURI as string);
       return true;
     }
     case "AgentDelegateSet": {
-      insertDelegate({
+      await insertDelegate({
         owner: args.owner as Address,
         agentId: args.agentId as Hex,
         delegate: args.delegate as Address,
@@ -126,7 +124,7 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "ChallengeFiled": {
-      upsertChallengeFiled({
+      await upsertChallengeFiled({
         challengeId: args.challengeId as bigint,
         receiptId: args.receiptId as Hex,
         challenger: args.challenger as Address,
@@ -141,7 +139,7 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "ChallengeResolved": {
-      resolveChallenge({
+      await resolveChallenge({
         challengeId: args.challengeId as bigint,
         uphold: args.uphold as boolean,
         payout: args.payout as bigint,
@@ -160,7 +158,7 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "IntentCommitted": {
-      insertIntentCommitted({
+      await insertIntentCommitted({
         intentHash: args.intentHash as Hex,
         owner: args.owner as Address,
         manifestUri: args.manifestURI as string,
@@ -171,11 +169,11 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "IntentRevoked": {
-      markIntentRevoked(args.owner as Address);
+      await markIntentRevoked(args.owner as Address);
       return true;
     }
     case "AgentRegistered": {
-      upsertAgentRegistered({
+      await upsertAgentRegistered({
         agentId: args.agentId as Hex,
         operator: args.operator as Address,
         metadataUri: args.metadataURI as string,
@@ -185,7 +183,7 @@ export async function handleLog(log: Log, ctx: DecodeContext): Promise<boolean> 
       return true;
     }
     case "AgentStaked": {
-      applyStakeIncrease({
+      await applyStakeIncrease({
         agentId: args.agentId as Hex,
         newStake: args.newStake as bigint,
       });

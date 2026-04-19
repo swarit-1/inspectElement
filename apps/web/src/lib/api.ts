@@ -26,6 +26,7 @@ import {
   scheduleMockChallengeResolve,
   seedUpheldChallenge,
 } from "@/mocks/mock-store";
+import { getAuthToken } from "@/hooks/use-siwe-auth";
 import type { Address, Hex } from "viem";
 
 /** Thrown when a receipt/challenge id is syntactically valid but no record exists. */
@@ -54,6 +55,15 @@ async function fetchWithHelpfulErrors(
   kind: "infra" | "runtime",
 ): Promise<Response> {
   try {
+    // Inject auth header if we have a token
+    const token = getAuthToken();
+    if (token && kind === "infra") {
+      const headers = new Headers(init?.headers);
+      if (!headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      init = { ...init, headers };
+    }
     return await fetch(input, init);
   } catch (err) {
     if (err instanceof TypeError) {

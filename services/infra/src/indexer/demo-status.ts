@@ -76,8 +76,8 @@ export class DemoStatusPoller {
     const last = json.last;
     if (!last || last.outcome !== "blocked" || !last.reasonCode) return;
     const scenarioId = last.scenarioId ?? `${last.reasonCode}:${Date.now()}`;
-    if (blockedAttemptExists(scenarioId)) return;
-    insertBlockedAttempt({
+    if (await blockedAttemptExists(scenarioId)) return;
+    await insertBlockedAttempt({
       scenarioId,
       reasonCode: last.reasonCode,
       reasonLabel: last.reasonLabel ?? null,

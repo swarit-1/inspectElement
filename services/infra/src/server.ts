@@ -3,7 +3,7 @@ import { loadDeployments, loadEnv } from "./config/env.js";
 import { DemoStatusPoller } from "./indexer/demo-status.js";
 import { IndexerPoller } from "./indexer/poller.js";
 import { Signer } from "./signer/index.js";
-import { getDb } from "./store/db.js";
+import { initDb } from "./store/db.js";
 import { logger } from "./utils/logger.js";
 
 /**
@@ -14,7 +14,7 @@ import { logger } from "./utils/logger.js";
  */
 async function main(): Promise<void> {
   const env = loadEnv();
-  getDb();
+  initDb();
   const signer = Signer.fromEnv();
 
   logger.info(

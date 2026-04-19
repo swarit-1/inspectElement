@@ -54,7 +54,7 @@ export function createChallengePrepareRouter(): Router {
       const bondAmount = deployment.constants.challengeBond;
       const arbiter = deployment.contracts.ChallengeArbiter;
 
-      const receipt = getReceipt(parsed.data.receiptId as Hex);
+      const receipt = await getReceipt(parsed.data.receiptId as Hex);
       if (!receipt) {
         res.json(prepareIneligible("receipt_not_found", bondAmount, env.CHAIN_ID));
         return;
@@ -66,7 +66,7 @@ export function createChallengePrepareRouter(): Router {
         return;
       }
 
-      const manifest = getManifestByHash(receipt.intentHash);
+      const manifest = await getManifestByHash(receipt.intentHash);
       if (!manifest) {
         res.json(prepareIneligible("manifest_not_indexed", bondAmount, env.CHAIN_ID));
         return;
@@ -76,7 +76,7 @@ export function createChallengePrepareRouter(): Router {
         return;
       }
 
-      const existing = findChallengeByReceipt(receipt.receiptId);
+      const existing = await findChallengeByReceipt(receipt.receiptId);
       if (existing && existing.status !== "REJECTED") {
         res.json(
           prepareIneligible(
