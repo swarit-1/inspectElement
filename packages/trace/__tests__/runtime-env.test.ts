@@ -5,6 +5,7 @@ import {
   deriveAgentId,
   loadRuntimeEnv,
   resolveRuntimeRpcUrl,
+  resolveSignerProvider,
 } from "../src/index.js";
 
 const TEST_OPERATOR_KEY =
@@ -41,8 +42,9 @@ describe("runtime env", () => {
       AGENT_SALT: "intentguard-demo-agent-v1",
     });
 
+    expect(runtime.account).toBeDefined();
     expect(runtime.agentId).toBe(
-      deriveAgentId(runtime.account.address, "intentguard-demo-agent-v1")
+      deriveAgentId(runtime.account!.address, "intentguard-demo-agent-v1")
     );
   });
 
@@ -61,6 +63,59 @@ describe("runtime env", () => {
       CHAIN_ID: "31337",
     });
 
-    expect(runtime.ownerAccount.address).not.toBe(runtime.account.address);
+    expect(runtime.account).toBeDefined();
+    expect(runtime.ownerAccount.address).not.toBe(runtime.account!.address);
+  });
+
+  describe("signer provider selection", () => {
+    it("defaults to local when no CDP creds are present", () => {
+      expect(resolveSignerProvider({})).toBe("local");
+    });
+
+    it("auto-detects cdp when all three CDP env vars are present", () => {
+      expect(
+        resolveSignerProvider({
+          CDP_API_KEY_ID: "id",
+          CDP_API_KEY_SECRET: "secret",
+          CDP_WALLET_SECRET: "wallet",
+        })
+      ).toBe("cdp");
+    });
+
+    it("respects explicit AGENT_SIGNER override", () => {
+      expect(
+        resolveSignerProvider({
+          AGENT_SIGNER: "local",
+          CDP_API_KEY_ID: "id",
+          CDP_API_KEY_SECRET: "secret",
+          CDP_WALLET_SECRET: "wallet",
+        })
+      ).toBe("local");
+      expect(resolveSignerProvider({ AGENT_SIGNER: "cdp" })).toBe("cdp");
+    });
+
+    it("does not require OPERATOR_PRIVATE_KEY in cdp mode and leaves account/agentId undefined", () => {
+      const runtime = loadRuntimeEnv({
+        AGENT_SIGNER: "cdp",
+        OWNER_PRIVATE_KEY: TEST_OWNER_KEY,
+        CDP_API_KEY_ID: "id",
+        CDP_API_KEY_SECRET: "secret",
+        CDP_WALLET_SECRET: "wallet",
+      });
+      expect(runtime.signerProvider).toBe("cdp");
+      expect(runtime.account).toBeUndefined();
+      expect(runtime.agentId).toBeUndefined();
+      expect(runtime.operatorKey).toBeUndefined();
+      expect(runtime.ownerAccount.address).toBeDefined();
+    });
+
+    it("still throws when local mode is selected and OPERATOR_PRIVATE_KEY is missing", () => {
+      expect(() =>
+        loadRuntimeEnv({
+          AGENT_SIGNER: "local",
+          OWNER_PRIVATE_KEY: TEST_OWNER_KEY,
+        })
+      ).toThrow(/OPERATOR_PRIVATE_KEY/);
+    });
   });
 });

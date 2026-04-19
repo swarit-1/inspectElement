@@ -28,7 +28,6 @@
     "agent:legit": "tsx agents/legit.ts",
     "agent:blocked": "tsx agents/blocked.ts",
     "agent:overspend": "tsx agents/overspend.ts",
-
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "test:contracts": "cd test && hardhat test --config ../hardhat.config.cts",
@@ -40,6 +39,7 @@
     "deploy:localhost": "npm run deploy:params:localhost && hardhat ignition deploy ignition/modules/Deploy.ts --network hardhat --parameters ignition/parameters/localhost.json && npm run deploy:write-manifest:localhost"
   },
   "dependencies": {
+    "@coinbase/cdp-sdk": "^1.48.0",
     "@openzeppelin/contracts": "5.0.2",
     "express": "^4.21.0",
     "viem": "^2.21.0"

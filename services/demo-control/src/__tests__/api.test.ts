@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { createDemoControlApp } from "../index.js";
 
 const MOCK_ENV = {
-  operatorKey: "0x" + "11".repeat(32),
   account: { address: "0x" + "22".repeat(20) },
   ownerAccount: { address: "0x" + "33".repeat(20) },
   ownerAddress: ("0x" + "33".repeat(20)) as `0x${string}`,
   agentId: ("0x" + "44".repeat(32)) as `0x${string}`,
   rpcUrl: "http://localhost:8545",
   traceServiceUrl: "http://localhost:7403",
+  signerProvider: "local" as const,
 } as const;
 
 describe("createDemoControlApp", () => {
@@ -22,7 +22,7 @@ describe("createDemoControlApp", () => {
     }));
 
     const app = createDemoControlApp({
-      loadAgentEnv: () => MOCK_ENV as never,
+      loadAgentEnv: async () => MOCK_ENV as never,
       runExecuteFlow,
       createScenarioId: () => "scenario-legit",
     });
@@ -59,7 +59,7 @@ describe("createDemoControlApp", () => {
     }));
 
     const app = createDemoControlApp({
-      loadAgentEnv: () => MOCK_ENV as never,
+      loadAgentEnv: async () => MOCK_ENV as never,
       runExecuteFlow,
       runPreflightOnlyFlow,
       createScenarioId: () => "scenario-blocked",
@@ -86,7 +86,7 @@ describe("createDemoControlApp", () => {
 
   it("records failures for async scenario execution", async () => {
     const app = createDemoControlApp({
-      loadAgentEnv: () => MOCK_ENV as never,
+      loadAgentEnv: async () => MOCK_ENV as never,
       runExecuteFlow: vi.fn(async () => {
         throw new Error("trace upload failed");
       }),

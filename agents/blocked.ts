@@ -11,9 +11,9 @@ import { loadAgentEnv, runPreflightOnlyFlow } from "./shared.js";
 async function main() {
   console.log("=== IntentGuard Demo: Blocked Attack ===\n");
 
-  const env = loadAgentEnv();
+  const env = await loadAgentEnv();
   console.log(`Agent:  ${env.agentId}`);
-  console.log(`Operator: ${env.account.address}\n`);
+  console.log(`Operator: ${env.account.address} (${env.signerProvider})\n`);
 
   const result = await runPreflightOnlyFlow(env);
 

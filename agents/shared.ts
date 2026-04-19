@@ -11,6 +11,7 @@ import {
   createPublicClient,
   getAddress,
   http,
+  type Account,
   type Hex,
 } from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
@@ -25,10 +26,14 @@ import {
   createGuardClient,
   GuardDecision,
   loadRuntimeEnv,
+  loadAgentAccount,
   REASON_CODE_HEX,
   IntentRegistryABI,
 } from "../packages/trace/src/index.js";
-import type { BuildExecutionRequestInput } from "../packages/trace/src/index.js";
+import type {
+  AgentSignerProvider,
+  BuildExecutionRequestInput,
+} from "../packages/trace/src/index.js";
 
 function pickChain() {
   const id = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined;
@@ -36,28 +41,40 @@ function pickChain() {
 }
 
 export interface AgentEnv {
-  readonly operatorKey: Hex;
-  readonly account: PrivateKeyAccount;
+  /**
+   * Raw operator key, only present in `local` signer mode. Undefined when
+   * the agent signer comes from a Coinbase Server Wallet.
+   */
+  readonly operatorKey?: Hex;
+  /** Operator/delegate account (viem). Backed by either CDP or a raw key. */
+  readonly account: Account;
   readonly ownerAccount: PrivateKeyAccount;
   readonly ownerAddress: Hex;
   readonly agentId: Hex;
   readonly rpcUrl: string;
   readonly traceServiceUrl: string;
+  readonly signerProvider: AgentSignerProvider;
 }
 
 /**
  * Load common environment for all demo agents.
+ *
+ * Async because the operator account may be sourced from a Coinbase
+ * Server Wallet (one network round-trip on the first call per process,
+ * cached thereafter).
  */
-export function loadAgentEnv(): AgentEnv {
+export async function loadAgentEnv(): Promise<AgentEnv> {
   const runtime = loadRuntimeEnv();
+  const { account, agentId } = await loadAgentAccount(runtime);
   return {
     operatorKey: runtime.operatorKey,
-    account: runtime.account,
+    account,
     ownerAccount: runtime.ownerAccount,
     ownerAddress: runtime.ownerAccount.address,
-    agentId: runtime.agentId,
+    agentId,
     rpcUrl: runtime.rpcUrl,
     traceServiceUrl: runtime.traceServiceUrl,
+    signerProvider: runtime.signerProvider,
   };
 }
 
