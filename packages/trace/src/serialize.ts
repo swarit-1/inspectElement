@@ -12,6 +12,7 @@
  */
 
 import type { DecisionTrace } from "./types.js";
+import { validateDecisionTrace } from "./validation.js";
 
 /**
  * Recursively produces a canonical JSON string with sorted keys at every depth.
@@ -27,9 +28,9 @@ function canonicalStringify(value: unknown): string {
   }
 
   if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
       throw new Error(
-        `Non-finite number in trace: ${value}. Only finite integers allowed.`
+        `Invalid number in trace: ${value}. Only finite integers allowed.`
       );
     }
     return String(value);
@@ -108,6 +109,7 @@ function normalizeTrace(trace: DecisionTrace): Record<string, unknown> {
  * Deterministic: same trace → same string across all runs.
  */
 export function serializeCanonical(trace: DecisionTrace): string {
+  validateDecisionTrace(trace);
   const normalized = normalizeTrace(trace);
   return canonicalStringify(normalized);
 }

@@ -24,6 +24,12 @@ export { GuardDecision, REASON_CODES } from "./types.js";
 export { serializeCanonical } from "./serialize.js";
 export { computeContextDigest } from "./digest.js";
 export {
+  DECISION_TRACE_SCHEMA,
+  DECISION_TRACE_SCHEMA_PATH,
+  validateDecisionTrace,
+  DecisionTraceValidationError,
+} from "./validation.js";
+export {
   buildExecutionRequest,
   prepareLiveTrace,
 } from "./execution-request.js";
@@ -51,6 +57,7 @@ export {
   DEFAULT_MERCHANT_ADDRESS,
   DEFAULT_DEMO_PORT,
   DEFAULT_MOCK_X402_PORT,
+  DEFAULT_DEMO_OWNER_KEY,
   resolveRuntimeRpcUrl,
   resolveTraceServiceUrl,
   resolveAgentSalt,
@@ -62,4 +69,4 @@ export {
   loadRuntimeEnv,
 } from "./runtime-env.js";
 export type { RuntimeEnv } from "./runtime-env.js";
-export { GuardedExecutorABI, AgentRegistryABI, ERC20ABI } from "./abi.js";
+export { GuardedExecutorABI, AgentRegistryABI, IntentRegistryABI, ERC20ABI } from "./abi.js";

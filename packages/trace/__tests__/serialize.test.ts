@@ -151,6 +151,19 @@ describe("serializeCanonical", () => {
     const parsed = JSON.parse(json);
     expect(parsed.prompts[0].content).toContain("\u2014");
   });
+
+  it("rejects non-integer numbers anywhere in the trace", () => {
+    const trace = makeTrace({
+      session: {
+        id: "fractional-temperature",
+        startedAt: 1700000000,
+        model: "claude-sonnet-4-20250514",
+        temperature: 0.5,
+      },
+    });
+
+    expect(() => serializeCanonical(trace)).toThrow(/Invalid number/i);
+  });
 });
 
 describe("computeContextDigest", () => {

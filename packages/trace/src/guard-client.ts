@@ -89,6 +89,7 @@ export function createGuardClient(
     req: ExecutionRequest
   ): Promise<PreflightResult> {
     const [decision, reasonCode] = (await publicClient.readContract({
+      account: walletClient.account.address,
       address: executorAddress,
       abi: GuardedExecutorABI,
       functionName: "preflightCheck",

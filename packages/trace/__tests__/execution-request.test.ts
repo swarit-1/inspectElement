@@ -49,6 +49,7 @@ describe("prepareLiveTrace", () => {
     const live = prepareLiveTrace(base, {
       owner: "0x1234567890123456789012345678901234567890",
       agentId: ("0x" + "99".repeat(32)) as `0x${string}`,
+      intentHash: ("0x" + "88".repeat(32)) as `0x${string}`,
       target: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
       token: "0x0000000000000000000000000000000000000001",
       amount: "15000000",
@@ -56,6 +57,7 @@ describe("prepareLiveTrace", () => {
 
     expect(live.owner).toBe("0x1234567890123456789012345678901234567890");
     expect(live.agentId).toBe(("0x" + "99".repeat(32)) as `0x${string}`);
+    expect(live.intentHash).toBe(("0x" + "88".repeat(32)) as `0x${string}`);
     expect(live.proposedAction.target).toBe(
       getAddress("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd")
     );

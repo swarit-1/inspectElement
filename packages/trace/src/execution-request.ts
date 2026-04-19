@@ -9,6 +9,7 @@ import type { DecisionTrace, ExecutionRequest, TraceAck } from "./types.js";
 export interface LiveTraceOverrides {
   readonly owner: string;
   readonly agentId: Hex;
+  readonly intentHash: Hex;
   readonly target: string;
   readonly token: string;
   readonly amount: string;
@@ -37,6 +38,7 @@ export function prepareLiveTrace(
     ...trace,
     owner: getAddress(overrides.owner.toLowerCase()),
     agentId: overrides.agentId,
+    intentHash: overrides.intentHash,
     proposedAction: {
       ...trace.proposedAction,
       target: getAddress(overrides.target.toLowerCase()),
