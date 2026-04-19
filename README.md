@@ -1,8 +1,8 @@
-# IntentGuard
+# Vault
 
 **Programmable guardrails for autonomous agents — enforced onchain, audited in seconds, challengeable by anyone.**
 
-IntentGuard is a trust layer for the agentic economy. A user commits a signed **intent** (what an agent can spend, where, and for how long), delegates execution to an agent operator, and every action passes through a guarded path that verifies policy, emits a receipt, and exposes a clean appeal when things go wrong.
+Vault is a trust layer for the agentic economy. A user commits a signed **intent** (what an agent can spend, where, and for how long), delegates execution to an agent operator, and every action passes through a guarded path that verifies policy, emits a receipt, and exposes a clean appeal when things go wrong.
 
 Built on **Base Sepolia**, settled in **USDC**.
 
