@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://intentguard.dev/schema/decision-trace-v1.json",
+  "title": "DecisionTrace v1",
+  "description": "Frozen agent decision trace for IntentGuard (see specs/specs-dev2.md). contextDigest = keccak256(UTF-8 bytes of canonical JSON).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "agentId",
+    "owner",
+    "intentHash",
+    "session",
+    "prompts",
+    "toolCalls",
+    "observations",
+    "proposedAction",
+    "nonce"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "agentId": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$"
+    },
+    "intentHash": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$"
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "startedAt", "model", "temperature"],
+      "properties": {
+        "id": { "type": "string" },
+        "startedAt": { "type": "integer" },
+        "model": { "type": "string" },
+        "temperature": { "type": "number" }
+      }
+    },
+    "prompts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "content", "timestamp"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "system", "assistant"]
+          },
+          "content": { "type": "string" },
+          "timestamp": { "type": "integer" }
+        }
+      }
+    },
+    "toolCalls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "input", "output", "timestamp"],
+        "properties": {
+          "name": { "type": "string" },
+          "input": { "type": "object" },
+          "output": { "type": "object" },
+          "timestamp": { "type": "integer" }
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "content", "timestamp"],
+        "properties": {
+          "source": { "type": "string" },
+          "content": { "type": "string" },
+          "timestamp": { "type": "integer" }
+        }
+      }
+    },
+    "proposedAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "token", "amount", "callData", "rationale"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "amount": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "USDC base units as decimal string (uint256)"
+        },
+        "callData": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]*$"
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+    "nonce": { "type": "integer", "minimum": 0 }
+  }
+}

@@ -1,4 +1,6 @@
 node_modules/
+# npm workspaces: single lockfile at repo root (avoids Turbopack multi-lockfile warning)
+apps/web/package-lock.json
 artifacts/
 cache/
 typechain-types/

@@ -7,6 +7,7 @@
  * @see `specs/specs-dev2.md` — frozen schema rules and deliverables.
  */
 
+export { DECISION_TRACE_SCHEMA_VERSION } from "./types.js";
 export type {
   DecisionTrace,
   SessionInfo,
@@ -34,4 +35,23 @@ export type {
 export { REASON_CODE_HEX, decodeReasonLabel } from "./reason-codes.js";
 export { loadDeploymentConfig, clearConfigCache } from "./config.js";
 export type { DeploymentConfig } from "./config.js";
+export {
+  DEFAULT_RUNTIME_RPC_URL,
+  DEFAULT_TRACE_SERVICE_URL,
+  DEFAULT_AGENT_SALT,
+  DEFAULT_AGENT_METADATA_URI,
+  DEFAULT_MERCHANT_ADDRESS,
+  DEFAULT_DEMO_PORT,
+  DEFAULT_MOCK_X402_PORT,
+  resolveRuntimeRpcUrl,
+  resolveTraceServiceUrl,
+  resolveAgentSalt,
+  resolveAgentMetadataUri,
+  resolveMerchantAddress,
+  resolveDemoPort,
+  resolveMockX402Port,
+  deriveAgentId,
+  loadRuntimeEnv,
+} from "./runtime-env.js";
+export type { RuntimeEnv } from "./runtime-env.js";
 export { GuardedExecutorABI, AgentRegistryABI, ERC20ABI } from "./abi.js";

@@ -12,40 +12,28 @@ import {
   createPublicClient,
   createWalletClient,
   http,
-  keccak256,
-  encodePacked,
-  type Hex,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import {
   loadDeploymentConfig,
   AgentRegistryABI,
   ERC20ABI,
+  loadRuntimeEnv,
 } from "../packages/trace/src/index.js";
 
 const STAKE_AMOUNT = 50_000_000n; // 50 USDC (6 decimals)
-const METADATA_URI = "ipfs://stub/agent-metadata";
 
 async function main() {
-  const operatorKey = process.env.OPERATOR_PRIVATE_KEY as Hex | undefined;
-  if (!operatorKey) {
-    console.error("Error: OPERATOR_PRIVATE_KEY env var required");
-    process.exit(1);
-  }
-
-  const salt = process.env.AGENT_SALT ?? "intentguard-demo-agent-v1";
-  const rpcUrl =
-    process.env.RPC_URL ?? "https://sepolia.base.org";
-
+  const runtime = loadRuntimeEnv();
   const config = loadDeploymentConfig();
-  const account = privateKeyToAccount(operatorKey);
+  const account = runtime.account;
 
   console.log("=== IntentGuard Agent Bootstrap ===");
   console.log(`Operator:  ${account.address}`);
   console.log(`Chain:     Base Sepolia (${config.chainId})`);
+  console.log(`RPC:       ${runtime.rpcUrl}`);
 
-  const transport = http(rpcUrl);
+  const transport = http(runtime.rpcUrl);
 
   const publicClient = createPublicClient({
     chain: baseSepolia,
@@ -59,9 +47,7 @@ async function main() {
   });
 
   // 1. Derive agentId
-  const agentId = keccak256(
-    encodePacked(["address", "string"], [account.address, salt])
-  );
+  const agentId = runtime.agentId;
   console.log(`AgentId:   ${agentId}`);
 
   // 2. Register agent
@@ -70,7 +56,7 @@ async function main() {
     address: config.contracts.AgentRegistry,
     abi: AgentRegistryABI,
     functionName: "registerAgent",
-    args: [agentId, account.address, METADATA_URI],
+    args: [agentId, account.address, runtime.agentMetadataUri],
   });
   console.log(`  tx: ${registerHash}`);
   await publicClient.waitForTransactionReceipt({ hash: registerHash });

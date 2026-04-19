@@ -33,7 +33,7 @@
     "toolCalls": [
       {
         "name": "check_merchant_status",
-        "input": { "merchantAddress": "0x0000000000000000000000000000000000000A01" },
+        "input": { "merchantAddress": "0x0000000000000000000000000000000000000a01" },
         "output": { "allowlisted": true, "name": "DataAPI Merchant" },
         "timestamp": 1700000003
       },
@@ -47,7 +47,7 @@
     "observations": [
       {
         "source": "merchant_registry",
-        "content": "Merchant 0x0000000000000000000000000000000000000A01 is allowlisted.",
+        "content": "Merchant 0x0000000000000000000000000000000000000a01 is allowlisted.",
         "timestamp": 1700000005
       },
       {
@@ -57,7 +57,7 @@
       }
     ],
     "proposedAction": {
-      "target": "0x0000000000000000000000000000000000000A01",
+      "target": "0x0000000000000000000000000000000000000a01",
       "token": "0x0000000000000000000000000000000000USDC01",
       "amount": "2000000",
       "callData": "0x",
@@ -65,7 +65,7 @@
     },
     "nonce": 0
   },
-  "expectedTarget": "0x0000000000000000000000000000000000000A01",
+  "expectedTarget": "0x0000000000000000000000000000000000000a01",
   "expectedAmount": "2000000",
   "expectedGuardDecision": "GREEN"
 }

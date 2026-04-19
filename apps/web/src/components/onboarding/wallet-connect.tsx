@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useConnectors, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { Button } from "@/components/ui/button";
 import { truncateAddress } from "@/lib/constants";
@@ -13,12 +13,19 @@ interface WalletConnectProps {
 
 export function WalletConnect({ step, onStepChange }: WalletConnectProps) {
   const { address, isConnected } = useAccount();
-  const { connect, isPending: isConnecting } = useConnect();
+  const connectors = useConnectors();
+  const { connect, isPending: isConnecting, error: connectError, reset } =
+    useConnect();
   const { disconnect } = useDisconnect();
 
   function handleConnect() {
+    reset();
+    const connector =
+      connectors.find((c) => c.id === "injected" || c.type === "injected") ??
+      connectors[0] ??
+      injected();
     connect(
-      { connector: injected() },
+      { connector },
       { onSuccess: () => onStepChange("deployed") }
     );
   }
@@ -65,9 +72,18 @@ export function WalletConnect({ step, onStepChange }: WalletConnectProps) {
           and file disputes.
         </p>
       </div>
-      <Button size="lg" onClick={handleConnect} loading={isConnecting}>
-        Connect Wallet
-      </Button>
+      <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+        <Button size="lg" onClick={handleConnect} loading={isConnecting}>
+          Connect Wallet
+        </Button>
+        {connectError ? (
+          <p className="text-xs text-danger text-center leading-relaxed">
+            {String(connectError.name) === "ProviderNotFoundError"
+              ? "No wallet found. Install a browser wallet (e.g. MetaMask) or enable this site in your wallet."
+              : connectError.message}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
