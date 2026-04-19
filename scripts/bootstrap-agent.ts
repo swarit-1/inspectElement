@@ -13,7 +13,7 @@ import {
   createWalletClient,
   http,
 } from "viem";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, hardhat } from "viem/chains";
 import {
   loadDeploymentConfig,
   AgentRegistryABI,
@@ -28,21 +28,24 @@ async function main() {
   const config = loadDeploymentConfig();
   const account = runtime.account;
 
+  const chainId = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : config.chainId;
+  const chain = chainId === 31337 ? hardhat : baseSepolia;
+
   console.log("=== IntentGuard Agent Bootstrap ===");
   console.log(`Operator:  ${account.address}`);
-  console.log(`Chain:     Base Sepolia (${config.chainId})`);
+  console.log(`Chain:     ${chain.name} (${chainId})`);
   console.log(`RPC:       ${runtime.rpcUrl}`);
 
   const transport = http(runtime.rpcUrl);
 
   const publicClient = createPublicClient({
-    chain: baseSepolia,
+    chain,
     transport,
   });
 
   const walletClient = createWalletClient({
     account,
-    chain: baseSepolia,
+    chain,
     transport,
   });
 
@@ -61,6 +64,38 @@ async function main() {
   console.log(`  tx: ${registerHash}`);
   await publicClient.waitForTransactionReceipt({ hash: registerHash });
   console.log("  confirmed.");
+
+  // 2b. Ensure operator has USDC (MockUSDC has open mint on local chains).
+  if (chainId === 31337) {
+    const balance = (await publicClient.readContract({
+      address: config.contracts.USDC,
+      abi: ERC20ABI,
+      functionName: "balanceOf",
+      args: [account.address],
+    })) as bigint;
+    if (balance < STAKE_AMOUNT) {
+      console.log("\n[1b/3] Minting MockUSDC to operator...");
+      const mintHash = await walletClient.writeContract({
+        address: config.contracts.USDC,
+        abi: [
+          {
+            type: "function",
+            name: "mint",
+            inputs: [
+              { name: "to", type: "address" },
+              { name: "amount", type: "uint256" },
+            ],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+        ] as const,
+        functionName: "mint",
+        args: [account.address, STAKE_AMOUNT],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: mintHash });
+      console.log(`  tx: ${mintHash}`);
+    }
+  }
 
   // 3. Approve USDC for StakeVault
   console.log("\n[2/3] Approving USDC for StakeVault...");

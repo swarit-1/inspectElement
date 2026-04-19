@@ -8,6 +8,7 @@ coverage/
 coverage.json
 dist/
 ignition/deployments/
+.e2e-logs/
 .env
 .env.*
 !.env.example

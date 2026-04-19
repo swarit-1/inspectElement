@@ -23,7 +23,8 @@
     "agents/**/*.ts",
     "scripts/**/*.ts",
     "services/demo-control/**/*.ts",
-    "services/mock-x402/**/*.ts"
+    "services/mock-x402/**/*.ts",
+    "hardhat.config.cts"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**"]
 }

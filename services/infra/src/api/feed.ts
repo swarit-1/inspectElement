@@ -54,7 +54,7 @@ export function createFeedRouter(): Router {
   const router = Router();
   const env = loadEnv();
   const deployment = loadDeployments(env);
-  const challengeWindowSec = deployment?.constants.challengeWindowSec ?? 72 * 60 * 60;
+  const challengeWindowSec = deployment?.constants?.challengeWindowSec ?? 72 * 60 * 60;
 
   router.get(
     "/feed",
