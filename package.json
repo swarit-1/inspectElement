@@ -39,7 +39,9 @@
     "deploy:localhost": "npm run deploy:params:localhost && hardhat ignition deploy ignition/modules/Deploy.ts --network hardhat --parameters ignition/parameters/localhost.json && npm run deploy:write-manifest:localhost"
   },
   "dependencies": {
+    "@base-org/account": "^2.5.4",
     "@coinbase/cdp-sdk": "^1.48.0",
+    "@coinbase/onchainkit": "^1.1.2",
     "@openzeppelin/contracts": "5.0.2",
     "@privy-io/react-auth": "^3.22.1",
     "@privy-io/wagmi": "^4.0.5",
