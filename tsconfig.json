@@ -26,5 +26,11 @@
     "services/mock-x402/**/*.ts",
     "hardhat.config.cts"
   ],
-  "exclude": ["node_modules", "dist", "**/__tests__/**"]
+  "exclude": ["node_modules", "dist", "**/__tests__/**"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "Node10"
+    }
+  }
 }

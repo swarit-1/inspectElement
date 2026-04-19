@@ -180,11 +180,22 @@ function main(): void {
         USDC: stripped.USDC ?? stripped.MockUSDC,
     };
 
+    // Prefer the signer addresses that were actually passed to the Ignition
+    // deploy (source of truth — those values were baked into the contract
+    // constructors). Fall back to explicit env vars if the params file is
+    // missing for any reason.
+    const paramsFile = path.join(ROOT, "ignition", "parameters", `${networkName}.json`);
+    const params = readJsonIfExists<IgnitionParameters>(paramsFile);
+    const paramsTraceAck = params?.IntentGuardDeploy?.traceAckSigner;
+    const paramsReviewer = params?.IntentGuardDeploy?.reviewerSigner;
     const traceAckSigner =
+        (paramsTraceAck && paramsTraceAck !== ZERO_ADDRESS ? paramsTraceAck : undefined) ??
         process.env.TRACE_ACK_SIGNER_ADDRESS ??
-        "0x0000000000000000000000000000000000000000";
+        ZERO_ADDRESS;
     const reviewerSigner =
-        process.env.REVIEWER_SIGNER_ADDRESS ?? traceAckSigner;
+        (paramsReviewer && paramsReviewer !== ZERO_ADDRESS ? paramsReviewer : undefined) ??
+        process.env.REVIEWER_SIGNER_ADDRESS ??
+        traceAckSigner;
 
     const out = {
         chainId,
@@ -193,6 +204,7 @@ function main(): void {
         contracts,
         traceAckSigner,
         reviewerSigner,
+        startBlock: findStartBlock(ignitionDir),
         constants: {
             chainId,
             maxSpendPerTx: "10000000",
