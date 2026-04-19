@@ -2,18 +2,16 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount } from "wagmi";
-import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
+import { useRouter } from "next/navigation";
+import { useEffect, type ReactNode } from "react";
+import { LoadingPulse } from "@/components/ui/loading";
 import { PRIVY_APP_ID } from "@/lib/privy";
 
 /**
- * Guards a page's authenticated content. When no wallet is connected, renders
- * an editorial empty state with a connect action in place of the children.
- *
- * In mock mode, we still require a connection because the Dashboard/Review
- * flows are keyed by `address` for react-query caching. The empty state makes
- * this deliberate and non-technical.
+ * Guards a page's authenticated content. Unauthenticated visitors are routed
+ * to `/login`, which hosts the editorial sign-in surface (and the
+ * configuration-missing recovery state when `NEXT_PUBLIC_PRIVY_APP_ID` is
+ * absent). A pulse placeholder covers the short redirect window.
  */
 export function WalletGate({
   caption,
@@ -24,56 +22,33 @@ export function WalletGate({
   body: string;
   children: ReactNode;
 }) {
-  const { ready, authenticated, login, connectWallet } = usePrivy();
+  const router = useRouter();
+  const { ready, authenticated } = usePrivy();
   const { isConnected } = useAccount();
 
-  if (!PRIVY_APP_ID) {
+  const missingConfig = !PRIVY_APP_ID;
+  const signedOut = !missingConfig && ready && (!authenticated || !isConnected);
+
+  useEffect(() => {
+    if (missingConfig || signedOut) {
+      const target = "/login";
+      router.replace(target);
+    }
+  }, [missingConfig, signedOut, router]);
+
+  if (!PRIVY_APP_ID || !ready || !authenticated || !isConnected) {
     return (
-      <div className="flex flex-col gap-8">
-        <EmptyState
-          glyph="○"
-          caption={caption}
-          headline="Configuration required."
-          body="Set NEXT_PUBLIC_PRIVY_APP_ID in .env.local to enable wallet access."
-        />
+      <div className="flex flex-col gap-4">
+        <p className="font-mono text-[11px] tracking-[0.22em] uppercase text-text-tertiary">
+          {caption}
+        </p>
+        <p className="text-sm text-text-secondary max-w-xl">{body}</p>
+        <div className="pt-8">
+          <LoadingPulse label="Routing to sign-in" align="left" pad={false} />
+        </div>
       </div>
     );
   }
 
-  if (isConnected) return <>{children}</>;
-
-  const handleAction = () => {
-    if (!authenticated) login();
-    else connectWallet();
-  };
-
-  const label = !ready
-    ? "Loading…"
-    : !authenticated
-      ? "Sign in →"
-      : "Connect wallet →";
-
-  return (
-    <div className="flex flex-col gap-8">
-      <EmptyState
-        glyph="○"
-        caption={caption}
-        headline="Wallet required."
-        body={body}
-      />
-      <div className="flex items-center gap-5 hairline-top pt-6">
-        <Button
-          onClick={handleAction}
-          loading={!ready}
-          disabled={!ready}
-          size="md"
-        >
-          {label}
-        </Button>
-        <span className="font-mono text-[11px] tnum text-text-tertiary">
-          Base Sepolia · Privy
-        </span>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }

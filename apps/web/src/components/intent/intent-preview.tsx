@@ -1,4 +1,10 @@
-import { CONTRACT_ADDRESSES, formatUsdc, truncateAddress } from "@/lib/constants";
+import { useState } from "react";
+import {
+  CONTRACT_ADDRESSES,
+  formatCounterpartyLabel,
+  formatUsdc,
+  truncateAddress,
+} from "@/lib/constants";
 import type { Address, Hex } from "viem";
 
 interface IntentPreviewProps {
@@ -16,7 +22,8 @@ export function IntentPreview({
   expiryDays,
   intentHash,
 }: IntentPreviewProps) {
-  const expiryDate = new Date(Date.now() + expiryDays * 86400_000);
+  const [previewStartedAt] = useState(() => Date.now());
+  const expiryDate = new Date(previewStartedAt + expiryDays * 86400_000);
 
   return (
     <div className="flex flex-col">
@@ -43,7 +50,9 @@ export function IntentPreview({
           [{counterparties.length}]
           {counterparties.length > 0 && (
             <span className="block text-text-tertiary mt-1">
-              {counterparties.map((c) => truncateAddress(c, 4)).join(", ")}
+              {counterparties
+                .map((c) => `${formatCounterpartyLabel(c)} · ${truncateAddress(c, 4)}`)
+                .join(", ")}
             </span>
           )}
         </DD>

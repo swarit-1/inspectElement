@@ -1,114 +1,182 @@
-# Smart Product Vision
+# What A Smart IntentGuard Product Looks Like
 
-## What this is
+## Core idea
 
-IntentGuard is **not** a wallet and **not** the payment agent.
+A smart product here does **not** mean “more AI everywhere.”
 
-It is a **control layer for agentic payments** that sits on top of an existing wallet, runtime, and payment flow. Its job is to add:
+It means the product is opinionated about where intelligence belongs:
 
-- policy controls
-- evidence capture
-- advisory AI analysis
-- challenge and recovery tools
+- deterministic systems protect money
+- AI helps interpret suspicious behavior
+- users and reviewers get clear evidence and recourse
 
-In plain English:
+The smartest version of IntentGuard is one where:
 
-- the wallet holds funds
-- the agent proposes actions
-- IntentGuard decides what is allowed, what is blocked, what is suspicious, and how users recover from bad outcomes
+- the payment path is simple
+- the risk story is visible
+- the explanation layer is helpful
+- the user always knows what happened and why
 
-## What this is not
+## The product shape
 
-Do **not** reimplement:
+IntentGuard should look like a product with three clear surfaces.
 
-- the wallet itself
-- the core agent runtime
-- the existing on-chain guard, receipt, and challenge flow
-- Supabase auth/storage already in place
-- the current demo flow that already works
+### 1. Owner workspace
 
-This sprint is about turning the existing system into a clearer, smarter product surface.
+This is where a user or treasury operator:
 
-## Product shape
+- connects a wallet
+- sets payment rules
+- authorizes an agent delegate
+- sees current spend limits
+- watches receipts, blocked attempts, and challenges
 
-The end-state product should have three simple surfaces:
+This surface should feel like a vault and control panel, not a developer test harness.
 
-### 1. Owner dashboard
+### 2. Partner / runtime console
 
-Where the wallet owner:
+This is where an integrating team:
 
-- sets rules
-- approves spend rails
-- authorizes delegates
-- monitors receipts, blocked attempts, and challenges
-
-### 2. Partner/runtime console
-
-Where an integrating team:
-
+- registers an agent or runtime
 - submits trace-backed execution requests
-- sees preflight and execution outcomes
-- consumes live events
+- sees preflight outcomes
+- consumes receipts and blocked attempts
+- receives live updates and webhook events
 
-### 3. Review console
+This surface should feel API-first and operational, not demo-button-first.
 
-Where a reviewer or risk operator:
+### 3. Risk / review console
 
-- opens a receipt or challenge
-- reads the evidence
-- sees an advisory Gemini summary
-- understands why the system allowed, blocked, or flagged the action
+This is where an ops, compliance, or reviewer persona:
 
-## Priority tasks
+- opens a receipt
+- sees the underlying trace evidence
+- reads an advisory Gemini summary
+- understands why the action was allowed, blocked, or challengeable
+- files or resolves disputes with clear provenance
 
-### 1. Add Gemini advisory screening
+This surface is where the Gemini story becomes strongest.
 
-Build a Gemini-powered screening layer that analyzes traces for prompt-injection or manipulation signals.
+## The ideal product flow
 
-Goal:
+### Setup
 
-- make the product visibly understand the attack, not just match a rule
+The owner does four things:
 
-### 2. Add Gemini incident summaries
+1. Connect wallet
+2. Set allowed counterparties, caps, token, and expiry
+3. Approve the spending rail
+4. Authorize the agent key
 
-Generate short advisory summaries for receipts and challenges from stored evidence.
+That should feel like setting a permissions envelope, not deploying contracts manually.
 
-Goal:
+### Execution
 
-- make the evidence easy for judges, users, and reviewers to understand
+A partner or runtime submits:
 
-### 3. Add a real execution API
+- the proposed payment
+- the evidence trace
+- the owner / agent context
 
-Keep the demo scenarios, but add a proper runtime-facing execution surface so the product is not just button-driven.
+The system returns one of three clean outcomes:
 
-Goal:
+- allowed
+- blocked
+- executed but challengeable
 
-- make IntentGuard look integratable, not just theatrical
+### Monitoring
 
-### 4. Add live updates
+The user sees:
 
-Stream new receipts, blocked attempts, challenges, and summaries into the UI.
+- what the agent tried to do
+- what the deterministic policy allowed or denied
+- what Gemini thinks looks suspicious
+- what recourse exists
 
-Goal:
+### Dispute
 
-- make the system feel operational and real-time
+If needed, the user or challenger files a challenge and sees:
 
-### 5. Improve role-aware UI
+- why the payment is contestable
+- what bond is required
+- what gets refunded on success
+- where the payout comes from
 
-Clarify what owners, challengers, reviewers, and partner admins can do.
+## What makes it feel “smart”
 
-Goal:
+### 1. It explains the difference between prevention and recovery
 
-- make the product feel like a real control plane instead of a hackathon toy
+The product should teach this clearly:
+
+- some attacks are blocked before funds move
+- some attacks are subtle and require evidence plus recourse
+
+That distinction is more sophisticated than a generic “AI security” claim.
+
+### 2. It separates authoritative logic from advisory AI
+
+The product should visually label:
+
+- deterministic on-chain decision
+- advisory Gemini analysis
+
+That makes the system feel trustworthy instead of magical.
+
+### 3. It makes traces legible
+
+Most security products bury evidence.
+
+IntentGuard should make evidence readable:
+
+- suspicious prompt text
+- proposed action
+- violated rule
+- receipt
+- challengeability
+- summary in plain English
+
+### 4. It feels live
+
+A smart product should not make users refresh and guess.
+
+It should stream:
+
+- new receipts
+- blocked attempts
+- challenge filing
+- challenge resolution
+- summary readiness
+
+### 5. It is useful to more than one persona
+
+The product should feel valuable to:
+
+- a wallet user
+- a fintech or AI builder
+- a risk reviewer
+- a judge or auditor
+
+## What the best demoable version would look like
+
+If this product felt truly strong in a demo, I would expect:
+
+- a clean owner dashboard with policy setup and live status
+- a partner execution console with real request / response behavior
+- a receipt detail page showing both deterministic verdict and Gemini advisory analysis
+- a review page showing a short incident summary from stored evidence
+- one blocked attack and one recovered overspend shown end to end
 
 ## Product principles
 
-- deterministic logic remains authoritative for money movement
-- Gemini stays advisory unless explicitly gated
-- evidence is first-class
-- the UI should explain both prevention and recovery
-- new features should build on top of the current system, not replace it
+If you keep these principles, the product will feel smart without becoming bloated:
 
-## One-sentence version
+- default to deterministic enforcement for money movement
+- use AI to interpret, summarize, and prioritize
+- keep user actions understandable
+- make evidence first-class
+- minimize clicks in the critical path
+- preserve a strong distinction between “what happened” and “what Gemini thinks about it”
 
-IntentGuard is a security and evidence layer for agentic payments that sits between an existing wallet and an existing agent, then blocks the obvious attack, explains the subtle one, and gives users a path to recover.
+## One-sentence product vision
+
+IntentGuard should feel like a security control plane for agentic payments: a product that not only blocks the obvious attack, but also explains the subtle one and gives the user a real path to recover.
