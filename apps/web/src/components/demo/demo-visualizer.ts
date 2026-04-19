@@ -6,20 +6,30 @@ import type { BlockedReason, DemoScenario, DemoStatus } from "@/lib/types";
  */
 export type StageNode = "owner" | "agent" | "guard" | "target" | "receipt";
 
+/** Percent along the corridor; even rhythm so five grid columns align without overlap. */
 export const NODE_POSITION: Record<StageNode, number> = {
   owner: 10,
-  agent: 32,
-  guard: 54,
-  target: 78,
-  receipt: 95,
+  agent: 30,
+  guard: 50,
+  target: 70,
+  receipt: 90,
 };
 
 export const NODE_LABEL: Record<StageNode, string> = {
-  owner: "Owner · Intent",
-  agent: "Agent Runtime",
-  guard: "Guard Checkpoint",
-  target: "Target Contract",
-  receipt: "Receipt · Recourse",
+  owner: "Owner",
+  agent: "Agent",
+  guard: "Guard",
+  target: "Target",
+  receipt: "Receipt",
+};
+
+/** Optional second-line caption for stages that have room (decision panel, evidence). */
+export const NODE_SUBLABEL: Record<StageNode, string> = {
+  owner: "Intent",
+  agent: "Runtime",
+  guard: "Checkpoint",
+  target: "Contract",
+  receipt: "Recourse",
 };
 
 /**

@@ -122,7 +122,8 @@ function StageImpl({ scenario, phase, isTerminal, isHolding, realResult }: Props
           transition={{ duration: 0.58, ease: easeOutExpo }}
         />
 
-        {/* Nodes */}
+        {/* Nodes — 5-column grid keeps each label in its own lane; absolute + fixed width caused overlap. */}
+        <div className="absolute inset-0 grid grid-cols-5 min-w-0">
         {NODE_ORDER.map((n) => {
           const active = phase.node === n && !isTerminal;
           const passed = NODE_POSITION[n] < packetX || (isTerminal && !frozenAtGuard);
@@ -145,8 +146,7 @@ function StageImpl({ scenario, phase, isTerminal, isHolding, realResult }: Props
           return (
             <div
               key={n}
-              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 w-[120px]"
-              style={{ left: `${NODE_POSITION[n]}%` }}
+              className="relative flex min-w-0 flex-col items-center justify-center gap-2 overflow-hidden px-1"
             >
               <div className="relative flex items-center justify-center h-5 w-5">
                 {guardActive && (
@@ -197,12 +197,12 @@ function StageImpl({ scenario, phase, isTerminal, isHolding, realResult }: Props
                   />
                 )}
               </div>
-              <div className="flex flex-col items-center gap-1 mt-1">
+              <div className="flex w-full min-w-0 flex-col items-center gap-1.5 mt-4">
                 <span className="font-mono text-[9.5px] tnum tracking-wider uppercase text-text-quat">
                   {NODE_SEQ[n]}
                 </span>
                 <motion.span
-                  className="font-mono text-[10.5px] tnum tracking-wide uppercase text-center"
+                  className="block w-full truncate text-center font-mono text-[10.5px] tnum uppercase tracking-normal"
                   animate={{
                     color:
                       active || guardActive
@@ -219,6 +219,7 @@ function StageImpl({ scenario, phase, isTerminal, isHolding, realResult }: Props
             </div>
           );
         })}
+        </div>
 
         {/* Packet */}
         <motion.div
