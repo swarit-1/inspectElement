@@ -68,7 +68,7 @@ export function createDemoControlApp(
 
     // Run asynchronously — status polled via GET /demo/status
     try {
-      const env = resolveEnv();
+      const env = await resolveEnv();
       const result = await executeFlow("legit", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
@@ -91,7 +91,7 @@ export function createDemoControlApp(
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = resolveEnv();
+      const env = await resolveEnv();
       const result = await preflightOnlyFlow(env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {
@@ -114,7 +114,7 @@ export function createDemoControlApp(
     res.json({ status: "running", scenarioId });
 
     try {
-      const env = resolveEnv();
+      const env = await resolveEnv();
       const result = await executeFlow("overspend", env);
       demoState.finishRun(scenarioId, "completed", result);
     } catch (err) {

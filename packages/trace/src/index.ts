@@ -65,8 +65,22 @@ export {
   resolveMerchantAddress,
   resolveDemoPort,
   resolveMockX402Port,
+  resolveSignerProvider,
   deriveAgentId,
   loadRuntimeEnv,
+  loadAgentAccount,
 } from "./runtime-env.js";
-export type { RuntimeEnv } from "./runtime-env.js";
+export type {
+  RuntimeEnv,
+  AgentAccountResolution,
+  AgentSignerProvider,
+} from "./runtime-env.js";
+export {
+  loadCdpAgentAccount,
+  DEFAULT_CDP_AGENT_ACCOUNT_NAME,
+} from "./cdp-account.js";
+export type {
+  CdpAgentAccount,
+  LoadCdpAgentAccountOptions,
+} from "./cdp-account.js";
 export { GuardedExecutorABI, AgentRegistryABI, IntentRegistryABI, ERC20ABI } from "./abi.js";

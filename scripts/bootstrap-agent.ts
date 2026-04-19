@@ -28,6 +28,7 @@ import {
   GuardedExecutorABI,
   IntentRegistryABI,
   loadRuntimeEnv,
+  loadAgentAccount,
 } from "../packages/trace/src/index.js";
 
 const STAKE_AMOUNT = 50_000_000n; // 50 USDC (6 decimals)
@@ -37,17 +38,29 @@ const INTENT_EXPIRY_BUFFER_SECONDS = 7 * 24 * 60 * 60; // 7 days
 async function main() {
   const runtime = loadRuntimeEnv();
   const config = loadDeploymentConfig();
-  const operatorAccount = runtime.account;
+  const {
+    account: operatorAccount,
+    address: operatorAddress,
+    agentId,
+    source: signerSource,
+  } = await loadAgentAccount(runtime);
   const ownerAccount = runtime.ownerAccount;
 
   const chainId = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : config.chainId;
   const chain = chainId === 31337 ? hardhat : baseSepolia;
 
   console.log("=== IntentGuard Agent Bootstrap ===");
-  console.log(`Operator:  ${operatorAccount.address}`);
+  console.log(`Operator:  ${operatorAddress} (${signerSource})`);
   console.log(`Owner:     ${ownerAccount.address}`);
   console.log(`Chain:     ${chain.name} (${chainId})`);
   console.log(`RPC:       ${runtime.rpcUrl}`);
+
+  if (signerSource === "cdp" && chainId !== 31337) {
+    console.log(
+      `\n[funding] Operator is a Coinbase Server Wallet. Ensure ${operatorAddress} ` +
+        `holds Base Sepolia ETH for gas and at least 50 USDC for the stake before continuing.`
+    );
+  }
 
   const transport = http(runtime.rpcUrl);
 
@@ -68,8 +81,7 @@ async function main() {
     transport,
   });
 
-  // 1. Derive agentId
-  const agentId = runtime.agentId;
+  // 1. Derive agentId (resolved above from runtime + signer source)
   console.log(`AgentId:   ${agentId}`);
   const [existingOperator, existingStakeAmount] =
     (await publicClient.readContract({
@@ -87,7 +99,7 @@ async function main() {
       address: config.contracts.AgentRegistry,
       abi: AgentRegistryABI,
       functionName: "registerAgent",
-      args: [agentId, operatorAccount.address, runtime.agentMetadataUri],
+      args: [agentId, operatorAddress, runtime.agentMetadataUri],
     });
     console.log(`  tx: ${registerHash}`);
     await publicClient.waitForTransactionReceipt({ hash: registerHash });
@@ -102,7 +114,7 @@ async function main() {
       publicClient as unknown as PublicClient,
       operatorWalletClient as unknown as WalletClient,
       config.contracts.USDC,
-      operatorAccount.address,
+      operatorAddress,
       STAKE_AMOUNT
     );
     await ensureLocalMockUsdcBalance(
@@ -182,7 +194,7 @@ async function main() {
     address: config.contracts.GuardedExecutor,
     abi: GuardedExecutorABI,
     functionName: "setAgentDelegate",
-    args: [agentId, operatorAccount.address, true],
+    args: [agentId, operatorAddress, true],
   });
   console.log(`  tx: ${delegateHash}`);
   await publicClient.waitForTransactionReceipt({ hash: delegateHash });

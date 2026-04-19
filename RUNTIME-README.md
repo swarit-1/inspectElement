@@ -13,8 +13,12 @@ The runtime layer between the LLM loop and the wallet. Handles:
 - Cross-language handoff helpers in TypeScript and Python for Dev 3 parity checks
 
 The demo flow assumes a real owner/delegate split:
-- `OWNER_PRIVATE_KEY` is the end-user account whose intent and USDC allowance are enforced on-chain.
-- `OPERATOR_PRIVATE_KEY` is the delegate/operator account that registers the agent, stakes, and submits guarded executions.
+- `OWNER_PRIVATE_KEY` is the end-user account whose intent and USDC allowance are enforced on-chain. **Always required** outside `CHAIN_ID=31337` — this is the user, not the agent, and stands in for MetaMask in CLI flows.
+- The delegate/operator account that registers the agent, stakes, and submits guarded executions can be sourced two ways:
+  - **`local`** (legacy): a raw `OPERATOR_PRIVATE_KEY` EOA.
+  - **`cdp`** (default when CDP creds are present): a Coinbase Server Wallet (EVM EOA) fetched/created via `@coinbase/cdp-sdk` and wrapped as a viem `Account`.
+
+Set `AGENT_SIGNER=cdp` (or just provide the three `CDP_*` env vars and let it auto-detect) to use a Server Wallet. `OPERATOR_PRIVATE_KEY` becomes optional in that case. The CDP path is **idempotent on `CDP_AGENT_ACCOUNT_NAME`** (default `intentguard-agent`), so re-running bootstrap resolves to the same on-chain operator address.
 
 ## Quick Start
 
@@ -50,8 +54,13 @@ npm run mock-x402
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `OPERATOR_PRIVATE_KEY` | Yes | — | Operator EOA private key (0x-prefixed hex) |
+| `OPERATOR_PRIVATE_KEY` | Only when `AGENT_SIGNER=local` | — | Operator/delegate EOA private key (0x-prefixed hex). Ignored in `cdp` mode. |
 | `OWNER_PRIVATE_KEY` | Yes* | — | Demo owner private key. Required for shared/testnet flows; defaults to a local Hardhat account only on `CHAIN_ID=31337`. |
+| `AGENT_SIGNER` | No | auto (`cdp` if CDP creds set, else `local`) | Selects the operator/delegate signer source. |
+| `CDP_API_KEY_ID` | When `AGENT_SIGNER=cdp` | — | Coinbase Developer Platform API key ID. |
+| `CDP_API_KEY_SECRET` | When `AGENT_SIGNER=cdp` | — | CDP API key secret. |
+| `CDP_WALLET_SECRET` | When `AGENT_SIGNER=cdp` | — | CDP Wallet Secret (authorizes EVM/Solana account writes). |
+| `CDP_AGENT_ACCOUNT_NAME` | No | `intentguard-agent` | Idempotent CDP account name; same name → same address. |
 | `RPC_URL` | No | `https://sepolia.base.org` | Canonical runtime RPC endpoint |
 | `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | Backward-compatible alias; runtime falls back to this if `RPC_URL` is unset |
 | `TRACE_SERVICE_URL` | No | `http://localhost:7403` | Dev 3's trace service or local stub |
@@ -60,6 +69,10 @@ npm run mock-x402
 | `AGENT_METADATA_URI` | No | `ipfs://stub/agent-metadata` | Metadata URI used by `npm run bootstrap` |
 | `DEMO_PORT` | No | `7402` | Demo control API port |
 | `MOCK_X402_PORT` | No | `7404` | Mock x402 merchant port |
+
+### Funding the Coinbase Server Wallet operator
+
+When `AGENT_SIGNER=cdp` is used on Base Sepolia, `npm run bootstrap` will print the resolved CDP operator address and refuse to make progress until the address has Base Sepolia ETH (for gas) and at least 50 USDC (for staking). Fund it via the [Coinbase CDP faucet](https://portal.cdp.coinbase.com/) or any standard Base Sepolia faucet. The owner side (`OWNER_PRIVATE_KEY` address) still needs its own ETH + 100 USDC buffer for committing intents and approving the GuardedExecutor.
 
 ## Architecture
 
