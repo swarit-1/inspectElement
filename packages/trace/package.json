@@ -1,10 +1,16 @@
 {
   "name": "@intentguard/trace-schema",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "files": [
+    "README.md",
+    "src",
+    "schema",
+    "python"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./schema/decision-trace-v1.schema.json"

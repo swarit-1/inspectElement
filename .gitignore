@@ -13,5 +13,6 @@ ignition/deployments/
 .env
 .env.*
 !.env.example
+__pycache__/
 LOCAL_PROJECT_OVERVIEW.md
 .DS_Store

@@ -10,6 +10,7 @@ The runtime layer between the LLM loop and the wallet. Handles:
 - Guarded execution via Dev 1's `GuardedExecutor` contract
 - Three demo agents: legit, blocked, overspend
 - Demo control API (IF-10) consumed by Dev 4's dashboard
+- Cross-language handoff helpers in TypeScript and Python for Dev 3 parity checks
 
 The demo flow assumes a real owner/delegate split:
 - `OWNER_PRIVATE_KEY` is the end-user account whose intent and USDC allowance are enforced on-chain.
@@ -27,6 +28,10 @@ cp .env.example .env
 
 # Run tests (trace serialization determinism)
 npm test
+
+# Python parity helper (optional)
+python3 packages/trace/python/trace.py canonical < trace.json
+python3 packages/trace/python/trace.py digest < trace.json
 
 # Start the local trace stub (if Dev 3's service isn't ready)
 TRACE_STUB_SIGNER_KEY=0x... npx tsx packages/trace/src/trace-stub-server.ts
@@ -63,11 +68,15 @@ packages/trace/src/
   types.ts         — DecisionTrace v1 schema (FROZEN)
   serialize.ts     — Canonical JSON serializer
   digest.ts        — keccak256 contextDigest computation
+  validation.ts    — schema/runtime validation helpers
   config.ts        — Deployment config reader
   abi.ts           — Contract ABI stubs
   trace-client.ts  — Trace upload client (IF-04)
   guard-client.ts  — Guarded execution client (IF-05)
   trace-stub.ts    — Local trace service stub
+
+packages/trace/python/
+  trace.py         — Python canonicalization + digest parity helper
 
 agents/
   shared.ts        — Common agent utilities
