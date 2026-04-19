@@ -80,6 +80,7 @@ export default function DashboardPage() {
           </header>
 
           {/* ── Setup steps ── */}
+          <SetupIntro />
           <SetupFlow key={address ?? "disconnected"} />
 
           {/* ── Ledger ── */}
@@ -87,6 +88,37 @@ export default function DashboardPage() {
         </div>
       </WalletGate>
     </Shell>
+  );
+}
+
+function SetupIntro() {
+  return (
+    <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 hairline-top hairline-bottom py-6">
+      <div className="flex flex-col gap-3 max-w-[66ch]">
+        <span className="eyebrow text-accent">Where Rules Are Set</span>
+        <h2
+          className="font-display font-semibold tracking-tight text-text-primary"
+          style={{ fontSize: "var(--t-lg)" }}
+        >
+          Start below in “Set payment rules.”
+        </h2>
+        <p className="text-[13px] text-text-secondary leading-relaxed">
+          Users do not deploy their own contracts in this flow. The shared
+          protocol contracts are already live on Base Sepolia. This setup area
+          is where the owner chooses who the agent may pay, what token it may
+          spend, the spending limits, and how long that permission lasts.
+        </p>
+      </div>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[12px]">
+        <dt className="eyebrow">Step I</dt>
+        <dd className="text-text-secondary">Set payment rules</dd>
+        <dt className="eyebrow">Step II</dt>
+        <dd className="text-text-secondary">Approve owner USDC</dd>
+        <dt className="eyebrow">Step III</dt>
+        <dd className="text-text-secondary">Authorize the server wallet</dd>
+      </dl>
+    </section>
   );
 }
 
