@@ -54,38 +54,64 @@ export function AgentDelegate({ onDelegated }: AgentDelegateProps) {
 
   return (
     <Section
-      title="Delegate Agent"
-      subtitle="Authorize an agent key to execute guarded payments"
+      index="02"
+      kicker="Authorization"
+      title="Delegate agent key"
+      subtitle="Authorize a signing key to invoke executePayment on your behalf"
     >
-      <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5 flex flex-col gap-4 max-w-xl">
-        <Input
-          label="Agent ID"
-          value={agentId}
-          onChange={(e) => setAgentId(e.target.value)}
-          placeholder="0x... (bytes32)"
-          className="font-mono text-xs"
-        />
-        <Input
-          label="Delegate Address"
-          value={delegate}
-          onChange={(e) => setDelegate(e.target.value)}
-          placeholder="0x... (agent's signing key)"
-          className="font-mono text-xs"
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-6 max-w-[820px]">
+        <div className="flex flex-col gap-5">
+          <Input
+            label="Agent ID (bytes32)"
+            value={agentId}
+            onChange={(e) => setAgentId(e.target.value)}
+            placeholder="0x…"
+            className="font-mono text-[12px]"
+          />
+          <Input
+            label="Delegate address"
+            value={delegate}
+            onChange={(e) => setDelegate(e.target.value)}
+            placeholder="0x… (agent's signing key)"
+            className="font-mono text-[12px]"
+          />
 
-        {error && (
-          <p className="text-sm text-danger bg-danger-dim rounded-[--radius-md] px-3 py-2">
-            {error}
+          {error && (
+            <div className="text-[12px] text-danger font-mono tnum hairline-top pt-3">
+              ✕ {error}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 pt-2">
+            <Button
+              size="lg"
+              onClick={handleDelegate}
+              loading={isProcessing}
+              disabled={isProcessing || isDone || !agentId || !delegate}
+            >
+              {isDone ? "✓ Delegate authorized" : "Approve delegate"}
+            </Button>
+            {isDone && (
+              <span className="font-mono text-[12px] tnum text-success">
+                ● On-chain ACL updated
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Side note — what this does */}
+        <aside className="flex flex-col gap-3 text-[12px] text-text-tertiary leading-relaxed max-w-[40ch]">
+          <div className="eyebrow text-text-secondary">What this does</div>
+          <p>
+            Sets <code className="font-mono text-text-secondary">agentDelegates[agentId][delegate] = true</code> on
+            the GuardedExecutor. Only this address can submit payment intents
+            for this agent.
           </p>
-        )}
-
-        <Button
-          onClick={handleDelegate}
-          loading={isProcessing}
-          disabled={isProcessing || isDone || !agentId || !delegate}
-        >
-          {isDone ? "Agent delegated" : "Approve Delegate"}
-        </Button>
+          <p>
+            Revoke at any time by calling the same function with{" "}
+            <code className="font-mono text-text-secondary">authorized = false</code>.
+          </p>
+        </aside>
       </div>
     </Section>
   );

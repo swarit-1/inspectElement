@@ -2,144 +2,170 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAccount } from "wagmi";
 import type { ReactNode } from "react";
+import { CHAIN_ID, CONTRACT_ADDRESSES, truncateAddress } from "@/lib/constants";
 
 interface ShellProps {
   children: ReactNode;
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: GridIcon },
-  { href: "/demo", label: "Demo Panel", icon: PlayIcon },
-  { href: "/review", label: "Review", icon: ScaleIcon },
+  { href: "/dashboard", label: "Dashboard", seq: "01" },
+  { href: "/demo", label: "Scenarios", seq: "02" },
+  { href: "/review", label: "Review", seq: "03" },
 ] as const;
 
 export function Shell({ children }: ShellProps) {
   const pathname = usePathname();
+  const { address, isConnected } = useAccount();
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 bg-bg-surface border-r border-border flex flex-col">
-        {/* Logo */}
-        <div className="px-5 py-5 border-b border-border-subtle">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[--radius-sm] bg-accent-subtle flex items-center justify-center">
-              <ShieldIcon className="w-4.5 h-4.5 text-accent" />
+    <div className="flex min-h-screen">
+      {/* Sidebar — vault control identity */}
+      <aside className="w-[240px] shrink-0 bg-bg-surface flex flex-col border-r border-rule">
+        {/* Brand stamp */}
+        <div className="px-6 pt-7 pb-5">
+          <Link href="/dashboard" className="block group">
+            <div className="flex items-baseline gap-1.5">
+              <VaultMark />
+              <span
+                className="font-display font-semibold tracking-tight text-text-primary leading-none"
+                style={{ fontSize: "var(--t-md)" }}
+              >
+                INTENT
+              </span>
+              <span
+                className="font-display font-semibold tracking-tight text-accent leading-none"
+                style={{ fontSize: "var(--t-md)" }}
+              >
+                GUARD
+              </span>
             </div>
-            <span className="font-display text-base font-bold tracking-tight">
-              IntentGuard
+            <span className="eyebrow mt-2 block text-text-quat">
+              Agent guard · v0.1
             </span>
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        <nav className="px-3 py-4 flex flex-col gap-px hairline-top hairline-bottom border-rule-subtle">
+          {NAV_ITEMS.map(({ href, label, seq }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
                 className={`
-                  flex items-center gap-2.5 px-3 py-2 rounded-[--radius-md] text-sm
+                  group relative flex items-center gap-3
+                  pl-3 pr-3 py-2.5
+                  text-[13px] tracking-tight
                   transition-colors duration-[--duration-fast]
                   ${
                     active
-                      ? "bg-bg-raised text-text-primary font-medium"
-                      : "text-text-secondary hover:text-text-primary hover:bg-bg-raised"
+                      ? "text-text-primary"
+                      : "text-text-tertiary hover:text-text-primary"
                   }
                 `}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {label}
+                <span
+                  className={`seq tabular-nums ${
+                    active ? "text-accent" : "text-text-quat group-hover:text-text-tertiary"
+                  }`}
+                >
+                  {seq}
+                </span>
+                <span className={active ? "font-medium" : ""}>{label}</span>
+                {active && (
+                  <span
+                    aria-hidden
+                    className="ml-auto h-3 w-px bg-accent"
+                  />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-border-subtle text-xs text-text-tertiary">
-          Base Sepolia
+        {/* Owner block (if connected) */}
+        {isConnected && address && (
+          <div className="px-6 py-5 hairline-bottom border-rule-subtle">
+            <div className="eyebrow mb-2">Owner key</div>
+            <div className="font-mono text-[12px] text-text-secondary tnum break-all leading-relaxed">
+              {address.slice(0, 6)}
+              <span className="text-text-quat">{address.slice(6, 38)}</span>
+              {address.slice(38)}
+            </div>
+          </div>
+        )}
+
+        {/* Footer — deployment stamp */}
+        <div className="mt-auto px-6 py-5 border-t border-rule-subtle">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className="led-pulse h-1.5 w-1.5 rounded-full bg-success"
+              aria-hidden
+            />
+            <span className="eyebrow text-text-secondary">Base Sepolia</span>
+            <span className="seq tabular-nums ml-auto">{CHAIN_ID}</span>
+          </div>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] tnum">
+            <dt className="text-text-quat font-mono">Reg</dt>
+            <dd className="text-text-tertiary font-mono text-right">
+              {truncateAddress(CONTRACT_ADDRESSES.intentRegistry, 4)}
+            </dd>
+            <dt className="text-text-quat font-mono">Exec</dt>
+            <dd className="text-text-tertiary font-mono text-right">
+              {truncateAddress(CONTRACT_ADDRESSES.guardedExecutor, 4)}
+            </dd>
+            <dt className="text-text-quat font-mono">Arb</dt>
+            <dd className="text-text-tertiary font-mono text-right">
+              {truncateAddress(CONTRACT_ADDRESSES.challengeArbiter, 4)}
+            </dd>
+          </dl>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-8">{children}</div>
+      <main className="flex-1 min-w-0 bg-bg-root">
+        <div className="max-w-[980px] px-10 py-10 reveal">{children}</div>
       </main>
     </div>
   );
 }
 
-// ── Inline SVG icons ──
-
-function ShieldIcon({ className }: { className?: string }) {
+/**
+ * Vault stamp glyph: a beveled diamond inside a square.
+ * Reads as "sealed unit" — better than a generic shield.
+ */
+function VaultMark() {
   return (
     <svg
-      className={className}
-      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
       fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      aria-hidden
+      className="mr-1"
     >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-function GridIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-    </svg>
-  );
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="5,3 19,12 5,21" />
-    </svg>
-  );
-}
-
-function ScaleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3v18" />
-      <path d="M4 7l8-4 8 4" />
-      <path d="M4 7l-2 8h8L4 7z" />
-      <path d="M20 7l2 8h-8l6-8z" />
+      <rect
+        x="1"
+        y="1"
+        width="14"
+        height="14"
+        stroke="currentColor"
+        strokeWidth="1"
+        className="text-accent"
+      />
+      <rect
+        x="4.5"
+        y="4.5"
+        width="7"
+        height="7"
+        transform="rotate(45 8 8)"
+        fill="currentColor"
+        className="text-accent"
+      />
     </svg>
   );
 }

@@ -25,48 +25,113 @@ export function WalletConnect({ step, onStepChange }: WalletConnectProps) {
 
   if (isConnected && address) {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between bg-bg-surface border border-border rounded-[--radius-lg] p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-success-dim flex items-center justify-center">
-              <CheckIcon className="w-5 h-5 text-success" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-text-primary">
-                Wallet Connected
-              </p>
-              <p className="text-xs text-text-secondary font-mono">
-                {truncateAddress(address, 6)}
-              </p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => disconnect()}>
-            Disconnect
-          </Button>
-        </div>
-
+      <div className="flex flex-col gap-7">
+        <ConnectedKey address={address} onDisconnect={() => disconnect()} />
         <GuardStatus step={step} onStepChange={onStepChange} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-8 py-16">
-      <div className="flex flex-col items-center gap-3 text-center max-w-md">
-        <div className="w-16 h-16 rounded-[--radius-lg] bg-accent-subtle flex items-center justify-center mb-2">
-          <ShieldIcon className="w-8 h-8 text-accent" />
+    <div className="flex flex-col gap-12">
+      {/* Brand stamp + tagline — left-aligned editorial */}
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <span className="seq tabular-nums">00 / IDENTIFY</span>
+          <span className="h-px flex-1 bg-rule" />
         </div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          IntentGuard
-        </h1>
-        <p className="text-text-secondary text-sm leading-relaxed">
-          Guard-and-recourse layer for AI agents that move USDC.
-          Connect your wallet to set agent constraints, monitor activity,
-          and file disputes.
-        </p>
+
+        <div>
+          <h1
+            className="font-display font-semibold tracking-tight text-text-primary leading-[0.95]"
+            style={{ fontSize: "var(--t-4xl)" }}
+          >
+            Intent
+            <span className="text-accent">Guard</span>
+          </h1>
+          <p
+            className="mt-5 text-text-secondary leading-relaxed max-w-[42ch]"
+            style={{ fontSize: "var(--t-md)" }}
+          >
+            A vault door between your USDC and an autonomous agent. Set the
+            spend envelope, monitor every action, dispute what shouldn&apos;t
+            have happened.
+          </p>
+        </div>
       </div>
-      <Button size="lg" onClick={handleConnect} loading={isConnecting}>
-        Connect Wallet
+
+      {/* Three pillars — flat, no cards */}
+      <ul className="flex flex-col">
+        <Pillar
+          seq="01"
+          name="Commit intent"
+          desc="Per-tx and per-day caps, allowed counterparties, expiry. Pinned and signed."
+        />
+        <Pillar
+          seq="02"
+          name="Delegate agent"
+          desc="Authorize a single signing key. Revoke at will. Stake-backed."
+        />
+        <Pillar
+          seq="03"
+          name="Recourse"
+          desc="Every overspend is challengeable. Operator stake covers the difference."
+        />
+      </ul>
+
+      {/* Action bar */}
+      <div className="flex items-center gap-5 hairline-top pt-6">
+        <Button size="lg" onClick={handleConnect} loading={isConnecting}>
+          Connect wallet →
+        </Button>
+        <span className="font-mono text-[11px] tnum text-text-tertiary">
+          Base Sepolia · injected wallet
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Pillar({ seq, name, desc }: { seq: string; name: string; desc: string }) {
+  return (
+    <li className="grid grid-cols-[40px_140px_1fr] gap-x-5 py-4 hairline-bottom border-rule-subtle items-baseline">
+      <span className="seq tabular-nums">{seq}</span>
+      <span
+        className="font-display font-semibold text-text-primary tracking-tight"
+        style={{ fontSize: "var(--t-md)" }}
+      >
+        {name}
+      </span>
+      <span className="text-[13px] text-text-tertiary leading-relaxed max-w-[60ch]">
+        {desc}
+      </span>
+    </li>
+  );
+}
+
+function ConnectedKey({
+  address,
+  onDisconnect,
+}: {
+  address: string;
+  onDisconnect: () => void;
+}) {
+  return (
+    <div className="flex items-end justify-between hairline-bottom pb-5">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="led-pulse h-1.5 w-1.5 rounded-full bg-success" />
+          <span className="eyebrow text-success">Wallet connected</span>
+        </div>
+        <div
+          className="font-mono tnum text-text-primary"
+          style={{ fontSize: "var(--t-lg)" }}
+        >
+          {truncateAddress(address, 6)}
+        </div>
+      </div>
+      <Button variant="ghost" size="sm" onClick={onDisconnect}>
+        Disconnect
       </Button>
     </div>
   );
@@ -82,92 +147,34 @@ function GuardStatus({
   const isDeployed = step !== "connect" && step !== "deploying";
 
   return (
-    <div className="bg-bg-surface border border-border rounded-[--radius-lg] p-5">
-      <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2">
+        <span className="eyebrow">GuardedExecutor module</span>
         <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              isDeployed ? "bg-success-dim" : "bg-warning-dim"
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isDeployed ? "bg-success led-pulse" : "bg-warning"
             }`}
+          />
+          <span
+            className="font-display font-semibold tracking-tight text-text-primary"
+            style={{ fontSize: "var(--t-md)" }}
           >
-            {isDeployed ? (
-              <CheckIcon className="w-5 h-5 text-success" />
-            ) : (
-              <ClockIcon className="w-5 h-5 text-warning" />
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-medium text-text-primary">
-              GuardedExecutor
-            </p>
-            <p className="text-xs text-text-secondary">
-              {isDeployed
-                ? "Active on smart account"
-                : "Not deployed yet"}
-            </p>
-          </div>
+            {isDeployed ? "Active on smart account" : "Not deployed"}
+          </span>
         </div>
-        {!isDeployed && (
-          <Button
-            size="sm"
-            onClick={() => {
-              onStepChange("deploying");
-              setTimeout(() => onStepChange("deployed"), 2000);
-            }}
-          >
-            Deploy
-          </Button>
-        )}
       </div>
+      {!isDeployed && (
+        <Button
+          size="md"
+          onClick={() => {
+            onStepChange("deploying");
+            setTimeout(() => onStepChange("deployed"), 2000);
+          }}
+        >
+          Deploy module
+        </Button>
+      )}
     </div>
-  );
-}
-
-function ShieldIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20,6 9,17 4,12" />
-    </svg>
-  );
-}
-
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12,6 12,12 16,14" />
-    </svg>
   );
 }

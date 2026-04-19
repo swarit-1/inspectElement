@@ -1,4 +1,4 @@
-import { formatUsdc, truncateAddress, CONTRACT_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, formatUsdc, truncateAddress } from "@/lib/constants";
 import type { Address, Hex } from "viem";
 
 interface IntentPreviewProps {
@@ -16,35 +16,91 @@ export function IntentPreview({
   expiryDays,
   intentHash,
 }: IntentPreviewProps) {
-  const expiry = Math.floor(Date.now() / 1000) + expiryDays * 86400;
-
-  const manifest = {
-    token: CONTRACT_ADDRESSES.usdc,
-    maxSpendPerTx: maxSpendPerTx.toString(),
-    maxSpendPerDay: maxSpendPerDay.toString(),
-    allowedCounterparties: counterparties,
-    expiry,
-    nonce: "auto",
-  };
+  const expiryDate = new Date(Date.now() + expiryDays * 86400_000);
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-        Manifest Preview
-      </span>
-      <pre className="bg-bg-raised border border-border-subtle rounded-[--radius-md] p-4 text-xs text-text-secondary font-mono leading-relaxed overflow-x-auto">
-        {JSON.stringify(manifest, null, 2)}
-      </pre>
-      {intentHash && (
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-text-tertiary uppercase tracking-wider">
-            Intent Hash
+    <div className="flex flex-col">
+      <div className="flex items-baseline justify-between hairline-bottom pb-3">
+        <span className="eyebrow">Manifest spec</span>
+        <span className="font-mono text-[10px] tnum text-text-quat">
+          EIP-712 / pinned to infra
+        </span>
+      </div>
+
+      {/* Definition list */}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 py-4 text-[12px] tnum">
+        <DT>token</DT>
+        <DD mono>USDC · {truncateAddress(CONTRACT_ADDRESSES.usdc, 4)}</DD>
+
+        <DT>maxSpendPerTx</DT>
+        <DD mono accent>{formatUsdc(maxSpendPerTx)} USDC</DD>
+
+        <DT>maxSpendPerDay</DT>
+        <DD mono accent>{formatUsdc(maxSpendPerDay)} USDC</DD>
+
+        <DT>allowedCounterparties</DT>
+        <DD mono>
+          [{counterparties.length}]
+          {counterparties.length > 0 && (
+            <span className="block text-text-tertiary mt-1">
+              {counterparties.map((c) => truncateAddress(c, 4)).join(", ")}
+            </span>
+          )}
+        </DD>
+
+        <DT>expiry</DT>
+        <DD>
+          <span className="text-text-secondary">{expiryDays}d</span>
+          <span className="text-text-quat ml-2">
+            ({expiryDate.toLocaleDateString()})
           </span>
-          <span className="text-xs font-mono text-accent break-all">
+        </DD>
+
+        <DT>nonce</DT>
+        <DD mono>auto · ts</DD>
+      </dl>
+
+      {intentHash ? (
+        <div className="hairline-top pt-3 mt-1">
+          <div className="eyebrow text-success mb-1.5">● Intent hash</div>
+          <code className="block font-mono text-[11px] tnum text-accent break-all leading-relaxed">
             {intentHash}
+          </code>
+        </div>
+      ) : (
+        <div className="hairline-top pt-3 mt-1">
+          <div className="eyebrow mb-1.5">○ Intent hash</div>
+          <span className="font-mono text-[11px] text-text-quat">
+            — pending sign &amp; commit —
           </span>
         </div>
       )}
     </div>
+  );
+}
+
+function DT({ children }: { children: React.ReactNode }) {
+  return (
+    <dt className="font-mono text-text-quat text-[11px] uppercase tracking-wider self-start pt-px">
+      {children}
+    </dt>
+  );
+}
+
+function DD({
+  children,
+  mono,
+  accent,
+}: {
+  children: React.ReactNode;
+  mono?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <dd
+      className={`${mono ? "font-mono" : ""} ${accent ? "text-text-primary font-semibold" : "text-text-secondary"} break-all`}
+    >
+      {children}
+    </dd>
   );
 }

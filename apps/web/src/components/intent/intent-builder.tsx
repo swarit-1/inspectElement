@@ -13,7 +13,6 @@ import {
   DEMO_EXPIRY_DAYS,
   DEFAULT_COUNTERPARTIES,
   CONTRACT_ADDRESSES,
-  USDC_DECIMALS,
   formatUsdc,
 } from "@/lib/constants";
 import { intentRegistryAbi } from "@/abi/intent-registry";
@@ -35,10 +34,8 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
   const [intentHash, setIntentHash] = useState<Hex | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { writeContract, data: txHash, isPending: isSigning } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const { writeContract, data: txHash } = useWriteContract();
+  useWaitForTransactionReceipt({ hash: txHash });
 
   function updateCounterparty(index: number, value: string) {
     setCounterparties((prev) => {
@@ -57,7 +54,6 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
     const nonce = Date.now();
 
     try {
-      // Step 1: Pin manifest with infra (IF-01)
       const manifest = {
         owner: address,
         token: CONTRACT_ADDRESSES.usdc,
@@ -71,7 +67,6 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
       const { manifestURI, intentHash: hash } = await postManifest(manifest);
       setIntentHash(hash);
 
-      // Step 2: Commit on-chain (IF-02)
       setStep("confirming");
       writeContract(
         {
@@ -113,90 +108,117 @@ export function IntentBuilder({ onCommitted }: IntentBuilderProps) {
 
   return (
     <Section
-      title="Commit Intent"
-      subtitle="Define what your agent is allowed to do with USDC"
+      index="01"
+      kicker="Manifest"
+      title="Commit intent"
+      subtitle="Define the spend envelope your agent must operate within"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Form (3 cols) */}
-        <div className="lg:col-span-3 flex flex-col gap-5 bg-bg-surface border border-border rounded-[--radius-lg] p-5">
-          {/* Fixed fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-                Per-TX Cap
-              </span>
-              <div className="bg-bg-raised border border-border-subtle rounded-[--radius-md] px-3 py-2 text-sm font-mono text-text-primary">
-                {formatUsdc(DEMO_MAX_SPEND_PER_TX)} USDC
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-                Daily Cap
-              </span>
-              <div className="bg-bg-raised border border-border-subtle rounded-[--radius-md] px-3 py-2 text-sm font-mono text-text-primary">
-                {formatUsdc(DEMO_MAX_SPEND_PER_DAY)} USDC
-              </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-8">
+        {/* Form column */}
+        <div className="flex flex-col gap-7">
+          {/* Caps — read-only spec values */}
+          <div className="grid grid-cols-2">
+            <ReadValue label="Per-tx cap" value={formatUsdc(DEMO_MAX_SPEND_PER_TX)} unit="USDC" />
+            <ReadValue label="Daily cap" value={formatUsdc(DEMO_MAX_SPEND_PER_DAY)} unit="USDC" />
           </div>
 
-          {/* Editable counterparties */}
+          {/* Counterparties */}
           <div className="flex flex-col gap-3">
-            <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-              Allowed Counterparties
-            </span>
-            {counterparties.map((cp, i) => (
-              <Input
-                key={i}
-                value={cp}
-                onChange={(e) => updateCounterparty(i, e.target.value)}
-                placeholder={`0x... (counterparty ${i + 1})`}
-                className="font-mono text-xs"
-              />
-            ))}
+            <div className="flex items-center justify-between">
+              <span className="eyebrow">Allowed counterparties</span>
+              <span className="font-mono text-[11px] tnum text-text-quat">
+                {counterparties.filter(Boolean).length} / 3
+              </span>
+            </div>
+            <div className="flex flex-col gap-3">
+              {counterparties.map((cp, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="seq tabular-nums w-5 shrink-0 text-text-quat">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1">
+                    <Input
+                      value={cp}
+                      onChange={(e) => updateCounterparty(i, e.target.value)}
+                      placeholder={`0x… address ${i + 1}`}
+                      className="font-mono text-[12px]"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Expiry */}
-          <Input
-            label="Expiry (days from now)"
-            type="number"
-            min={1}
-            max={365}
-            value={expiryDays}
-            onChange={(e) => setExpiryDays(Number(e.target.value))}
-          />
+          <div className="max-w-[240px]">
+            <Input
+              label="Expiry window"
+              type="number"
+              min={1}
+              max={365}
+              value={expiryDays}
+              onChange={(e) => setExpiryDays(Number(e.target.value))}
+              suffix="days"
+            />
+          </div>
 
           {error && (
-            <p className="text-sm text-danger bg-danger-dim rounded-[--radius-md] px-3 py-2">
-              {error}
-            </p>
+            <div className="text-[12px] text-danger font-mono tnum hairline-top pt-3">
+              ✕ {error}
+            </div>
           )}
 
-          <Button
-            onClick={handleSignAndCommit}
-            loading={isProcessing}
-            disabled={isProcessing || step === "done"}
-          >
-            {step === "signing"
-              ? "Pinning manifest..."
-              : step === "confirming"
-                ? "Confirming on-chain..."
-                : step === "done"
-                  ? "Intent committed"
-                  : "Sign & Commit Intent"}
-          </Button>
+          <div className="flex items-center gap-4 pt-2">
+            <Button
+              size="lg"
+              onClick={handleSignAndCommit}
+              loading={isProcessing}
+              disabled={isProcessing || step === "done"}
+            >
+              {step === "signing"
+                ? "Pinning manifest…"
+                : step === "confirming"
+                  ? "Confirming on-chain…"
+                  : step === "done"
+                    ? "✓ Intent committed"
+                    : "Sign & commit"}
+            </Button>
+            {step === "done" && (
+              <span className="font-mono text-[12px] tnum text-success">
+                ● Active on-chain
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Preview (2 cols) */}
-        <div className="lg:col-span-2">
-          <IntentPreview
-            maxSpendPerTx={DEMO_MAX_SPEND_PER_TX}
-            maxSpendPerDay={DEMO_MAX_SPEND_PER_DAY}
-            counterparties={counterparties.filter(Boolean) as Address[]}
-            expiryDays={expiryDays}
-            intentHash={intentHash}
-          />
-        </div>
+        {/* Preview column */}
+        <IntentPreview
+          maxSpendPerTx={DEMO_MAX_SPEND_PER_TX}
+          maxSpendPerDay={DEMO_MAX_SPEND_PER_DAY}
+          counterparties={counterparties.filter(Boolean) as Address[]}
+          expiryDays={expiryDays}
+          intentHash={intentHash}
+        />
       </div>
     </Section>
+  );
+}
+
+function ReadValue({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="flex flex-col gap-1.5 border-b border-rule-subtle pb-3">
+      <span className="eyebrow">{label}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className="font-display font-semibold tnum text-text-primary leading-none tracking-tight"
+          style={{ fontSize: "var(--t-xl)" }}
+        >
+          {value}
+        </span>
+        <span className="text-[11px] text-text-tertiary tnum font-mono uppercase tracking-wider">
+          {unit}
+        </span>
+      </div>
+    </div>
   );
 }
